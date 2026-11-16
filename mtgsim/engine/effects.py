@@ -520,6 +520,8 @@ class EffectsMixin:
             if left:
                 pl.graveyard.left = []
                 self.fire(pl, "gy_leave", subject=left)
+        if getattr(self, "_mid_resolution", 0):
+            return      # CR 704.3: not between the effects of a resolving item; resolve_top checks once it is done (#682)
         changed = True
         while changed:
             changed = False

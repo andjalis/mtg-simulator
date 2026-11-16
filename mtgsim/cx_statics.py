@@ -143,6 +143,10 @@ def _holds(source, code, ref) -> bool:
 def _anthems(perm):
     """(source, rule) for every conditional anthem that could reach perm."""
     game = getattr(perm.controller, "_game", None)
+    if game is not None:
+        from .residual_templates import _source_index
+        if "anthem_if" not in _source_index(game):
+            return          # no conditional anthem on the battlefield (#698)
     players = game.players if game is not None else (perm.controller,)
     for pl in players:
         for x in pl.battlefield:
@@ -164,6 +168,16 @@ def _attached(perm):
     return list(perm.auras) + list(perm.equipment)
 
 
+def _host_rules(perm) -> bool:
+    """Could an attached permanent have host_kws / host_if rules? (the cached source index; #698)"""
+    game = getattr(perm.controller, "_game", None)
+    if game is None:
+        return True
+    from .residual_templates import _source_index
+    index = _source_index(game)
+    return "host_kws" in index or "host_if" in index
+
+
 def pt_bonus(perm):
     bp = bt = 0
     if not perm.abilities_suppressed:
@@ -174,7 +188,7 @@ def pt_bonus(perm):
                 if perm.condition(code):
                     n = game.x_quantity(perm.controller, spec, StackItem(perm.controller, [], [], source=perm), None)
                     bp, bt = bp + pp * n, bt + tt * n
-    for a in _attached(perm):
+    for a in _attached(perm) if _host_rules(perm) else ():
         for code, pp, tt, _kws, ep, et in a.card.advanced_rules.get("host_if", ()):
             if _holds(a, code, perm):
                 bp, bt = bp + pp, bt + tt
@@ -190,7 +204,7 @@ def pt_bonus(perm):
 
 
 def grants(perm, kw: str) -> bool:
-    for a in _attached(perm):
+    for a in _attached(perm) if _host_rules(perm) else ():
         if kw in a.card.advanced_rules.get("host_kws", ()):      # cx_lures: "Enchanted creature can't block."
             return True
         for code, _pp, _tt, kws, _ep, _et in a.card.advanced_rules.get("host_if", ()):

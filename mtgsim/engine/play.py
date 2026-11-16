@@ -222,7 +222,7 @@ class PlayMixin:
             from ..cx_mech import pay_beam
             if not pay_beam(self, p, base):
                 return False
-        if kind.startswith("cond_alt_"):
+        if kind.startswith(("cond_alt_", "gy_alt_", "ex_alt_")):
             from ..cx_altcost import pay as pay_alternative
             if not pay_alternative(self, p, base, kind):
                 return False

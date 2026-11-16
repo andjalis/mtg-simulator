@@ -29,10 +29,38 @@ _REFERS = re.compile(r"\b(?:they|their|them|theirs|that player|that player's|tha
 _DAMAGE_KINDS = {"cx_damage", "damage", "damage_each_player"}
 
 
+_TYPE_NOUNS = {"creature", "artifact", "enchantment", "permanent", "land", "planeswalker"}
+
+
+def _noun_ok(word: str) -> bool:
+    """A word that names one permanent: a card type, or a subtype ("that Wall's")."""
+    from .permanent_templates import _SUBTYPE_TYPES
+    return word.lower() in _TYPE_NOUNS or word.lower() in _SUBTYPE_TYPES
+
+
+def _referent(q: str):
+    """("stat", "prev", stat) for "that creature's power" / "the artifact's mana value" / "that Wall's mana value":
+    the object the effect before it acted on (or the permanent a trigger fired on), read as it last was, or None."""
+    m = re.fullmatch(r"(?:that|the) ([\w-]+)'s (power|toughness|mana value)", q, re.I)
+    return ("stat", "prev", m[2].lower()) if m and _noun_ok(m[1]) else None
+
+
+def _recipient(t: str) -> str:
+    """"the creature's controller" / "that Wall's controller" -> "that permanent's controller" (the grammar's
+    controller of the object the sentence refers to)."""
+    m = re.fullmatch(r"(?:that|the) ([\w-]+)'s controller", t.strip(), re.I)
+    return "that permanent's controller" if m and _noun_ok(m[1]) else t
+
+
 def _spec(q: str, own: bool = False):
     """The quantity spec, or None when it isn't one the engine counts faithfully on its own."""
     from .cards.clauses import _xq
     q = q.strip().rstrip(".")
+    m = re.fullmatch(r"~'s (power|toughness|mana value)", q, re.I)
+    if m:
+        return ("stat", "self", m[1].lower())       # the source's own stat as the damage is dealt
+    if _referent(q):
+        return _referent(q)
     if own:     # "~ deals damage equal to the number of time counters on it to ...": on the source itself
         q = re.sub(r"\bcounters on it$", "counters on ~", q)
     if re.search(r"\bnamed ~", q):
@@ -90,10 +118,14 @@ def _build(m, own=False):
     spec = _spec(m["q"], own)
     if spec is None:
         return NO_MATCH
+    if spec[:2] == ("stat", "prev") and _recipient(m["t"]) == m["t"]:
+        # "that creature's power" only to that creature's controller: with a target the engine's "prev" would be
+        # the damage's own target, and another untargeted recipient leaves "that creature" unclear
+        return NO_MATCH
     if _targeted(m["t"]):
-        eff = _simple(m)
+        eff = _simple(m) if spec[0] != "stat" else NO_MATCH
         return _single_target(m["s"], m["t"], spec) if eff is NO_MATCH else eff
-    return _untargeted(m["s"], m["t"], spec)
+    return _untargeted(m["s"], _recipient(m["t"]), spec)
 
 
 def _single_target(src: str, recipient: str, spec, n: int = 1, extra=None):

@@ -34,6 +34,7 @@ class Parse(unittest.TestCase):
             self.assertEqual((effects[0].kind, effects[0].target, effects[0].data["xq"]), ("add_counter", "self", xq))
 
     def test_refusals(self):
+        # ("... for each creature destroyed this way" is read since #576: the destroy just before it, checked in a game)
         for text in ("Put a +1/+1 counter on ~ for each frob you control.",
                      "Put a +1/+1 counter on ~ for each creature card exiled this way.",
                      "Put a +1/+1 counter on each creature that entered the battlefield under your control this turn."):
