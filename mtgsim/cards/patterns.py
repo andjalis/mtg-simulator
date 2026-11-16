@@ -420,7 +420,10 @@ _EFFECT_PATTERNS = wordings.patterns("core") + [
     (r"~ gains ((?:flying|first strike|double strike|deathtouch|lifelink|vigilance|trample|haste|hexproof|indestructible|menace|reach))(?: and ((?:flying|first strike|double strike|deathtouch|lifelink|vigilance|trample|haste|hexproof|indestructible|menace|reach)))? until end of turn",
      lambda m: [Effect("grant", target="self", data={"keyword": k.lower()}) for k in m.groups() if k]),
     (r'you get an emblem with "([A-Z][a-z]+)s you control get \+(\d+)/\+(\d+)\.?"',
-     lambda m: Effect("emblem", _num(m[2]), _num(m[3]), data={"subtype": m[1]})),
+     # "Creatures you control get +2/+2" is no subtype (matched case-insensitively it pumped nothing, Ajani Resolute):
+     # left to the general static emblem (mtgsim/emblems.py, #839)
+     lambda m: NO_MATCH if m[1].lower() == "creature" else Effect("emblem", _num(m[2]), _num(m[3]),
+                                                                  data={"subtype": m[1]})),
     (r"put (a|one|two|three) \+1/\+1 counters? on each (other )?(tapped |legendary )?(creature|[A-Z][a-z]+) you control",
      lambda m: Effect("p1_counters", _num(m[1]), target="my_creatures",
                       data={"other": bool(m[2]), "only": (m[3] or "").strip() or

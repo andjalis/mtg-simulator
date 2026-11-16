@@ -45,8 +45,10 @@ class Parse(unittest.TestCase):
         self.assertEqual(e.data["who"], "opponent")
 
     def test_refusals(self):
-        # static bodies are a later #839 slice; a body the reader doesn't match exactly stays unparsed
-        for body in ("Creatures you control get +2/+2 and have flying.", "You have no maximum hand size.",
+        # a body the readers don't match exactly, or a static ability outside anthems / keyword grants / hand size,
+        # stays unparsed: the card is partial, not silently full
+        for body in ("Instant and sorcery spells you cast have storm.", "Your opponents can't cast noncreature spells.",
+                     "Creatures you control have base power and toughness 9/9.",
                      "At the beginning of your end step, do a little dance."):
             with self.subTest(body=body):
                 c = walker(body)
@@ -60,7 +62,7 @@ class Parse(unittest.TestCase):
             c = db(name)
             self.assertTrue(c.fully_supported, name)
             self.assertTrue(emblems(c), name)
-        self.assertFalse(db("Elspeth, Sun's Champion").fully_supported)        # a static emblem: not yet
+        self.assertFalse(db("Narset Transcendent").fully_supported)            # a lock emblem: not read yet
 
 
 class Base(unittest.TestCase):

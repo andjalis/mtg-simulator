@@ -33,7 +33,8 @@ _FIELDS = ("static_keyword_grants", "keyword_sub", "team_keywords", "counter_tea
 def field_sources(game, field):
     """The battlefield permanents whose card may have a non-empty ``field`` (one of _FIELDS), in battlefield order:
     a scan over them finds what a scan over every permanent would (#698)."""
-    return [x for x in _source_index(game).get("@" + field, ()) if x in x.controller.battlefield]
+    return [x for x in _source_index(game).get("@" + field, ())
+            if x in x.controller.battlefield or x in x.controller.command]     # emblems' keyword grants (#839)
 
 
 def has_source_key(game, key) -> bool:
@@ -51,7 +52,7 @@ def sources(game, key):
     if cached is None or cached[0] != sizes:
         index = {}
         for player in game.players:
-            for permanent in player.battlefield:
+            for permanent in player.battlefield + player.command:      # emblems' static abilities too (#839)
                 keys = permanent.card.advanced_rules.keys() | permanent.copiable_card.advanced_rules.keys()
                 for name in keys:
                     index.setdefault(name, []).append(permanent)
@@ -60,7 +61,7 @@ def sources(game, key):
                         index.setdefault("@" + field, []).append(permanent)
         cached = sizes, index
         game._residual_source_index = cached
-    return [x for x in cached[1].get(key, ()) if x in x.controller.battlefield and
+    return [x for x in cached[1].get(key, ()) if (x in x.controller.battlefield or x in x.controller.command) and
             x.card.advanced_rules.get(key) and not x.abilities_suppressed]
 
 

@@ -307,3 +307,4 @@ _EFFECT_PATTERNS += _until_nonland.EFFECT_PATTERNS
 _SUBS += _until_nonland.SUBS
 from .. import emblems as _emblems  # noqa: E402  emblems with a triggered ability (#839)
 _EFFECT_PATTERNS += _emblems.EFFECT_PATTERNS
+_SUBS += _emblems.SUBS
