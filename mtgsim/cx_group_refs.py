@@ -151,3 +151,59 @@ def parse(s: str, effects: list, starts=()) -> bool:
         return False
     effects += new
     return True
+
+
+def cond_rider(cond: str, body: str, effects: list) -> bool:
+    """"If C, those creatures [also] gain vigilance until end of turn." after a group or counted targets: the rider
+    under condition C. After a group it is always a separate ``permanent_group`` (a group's inner effects are not
+    checked against conditions, so the rider can't join one); after counted targets the chain_rider copies carry C."""
+    if not effects or effects[-1].cond:
+        return False
+    body = re.sub(r"^(those creatures|they|each of them|each of those creatures) also ", r"\1 ", body.strip(), flags=re.I)
+    text = singular(body)
+    if text is None:
+        return False
+    last = effects[-1]
+    if last.kind == "permanent_group" and "selector" in last.data:
+        sel = dict(last.data["selector"])
+        if any(e.kind in _MOVES for e in last.data.get("effects") or [last.data.get("effect")] if e is not None):
+            return False
+    else:
+        sel = _selector(last)
+    if sel is not None:
+        inner = _inner(text)
+        if inner is None or _reads_tapped(sel) and _taps(last):
+            return False
+        from .cards.model import Effect
+        effects.append(Effect("permanent_group", cond=cond, data={"selector": sel, "effects": inner}))
+        return True
+    if last.kind == "cx_group":
+        return False            # a group of a target player's permanents: a second group would need that target
+    from .cx_multi_target import chain_rider
+    tmp = list(effects)
+    if not chain_rider(body[0].upper() + body[1:].rstrip(".") + ".", tmp):
+        return False
+    if last.kind == "cx_multi":         # the rider joined the list target's chain: its new links carry C
+        multi, n = tmp[-1], len(last.data["chain"])
+        chain = list(multi.data["chain"][:n]) + [dataclasses.replace(e, cond=cond) for e in multi.data["chain"][n:]]
+        effects[-1] = dataclasses.replace(multi, data=dict(multi.data, chain=chain))
+        return True
+    old = {id(e) for e in effects}
+    # the rider's copies (on "it"); a split "tap up to two" entry's new tap copies stay unconditional
+    effects[:] = [e if id(e) in old or e.target != "prev" else dataclasses.replace(e, cond=cond) for e in tmp]
+    return True
+
+
+_LINE_RIDER = re.compile(r"(?:[A-Z][\w' ]+ — )?if (?P<cond>.+?), (?P<body>(?:those creatures|they|each of them|each of "
+                         r"those creatures) .+)", re.I)
+
+
+def spell_line_rider(line: str, spell: list) -> bool:
+    """An instant's or sorcery's own line "[Ability word —] If C, those creatures ..." after the line that chose or
+    named them (Kytheon's Tactics, Icy Blast): the conditional rider on the spell's effects so far."""
+    m = _LINE_RIDER.fullmatch(line.strip())
+    if m is None or not spell or "." in m["body"].rstrip("."):
+        return False
+    from .cards.clauses import _if_cond
+    cond = _if_cond(m["cond"])
+    return bool(cond) and cond_rider(cond, m["body"], spell)

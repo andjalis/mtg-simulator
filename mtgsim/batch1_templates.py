@@ -253,10 +253,17 @@ def parse_line(line, st):
         st.extra.setdefault('advanced_rules', {})['creatures_uncounterable'] = True
         return True
     m = re.fullmatch(r"(Noncreature |Creature |Artifact |Enchantment |Instant and sorcery |Instant |Sorcery |)[Ss]pells "
-                     r"(your opponents cast |)cost \{(\d+)\} more to cast\.", line)
+                     r"(your opponents cast |)cost \{(\d+)\} more to cast\.", line) or \
+        re.fullmatch(r"((?i:Artifact|Creature|Enchantment|Instant|Sorcery|Planeswalker)(?:, (?:and )?|,? and |,? or )"
+                     r"(?:(?i:Artifact|Creature|Enchantment|Instant|Sorcery|Planeswalker)(?:, (?:and )?|,? and |,? or ))*"
+                     r"(?i:Artifact|Creature|Enchantment|Instant|Sorcery|Planeswalker)) spells (your opponents cast |)"
+                     r"cost \{(\d+)\} more to cast\.", line)
     if m:
         rules = st.extra.setdefault('advanced_rules', {})
-        rules['spell_tax'] = rules.get('spell_tax', ()) + ((m[1].strip().lower(), bool(m[2]), int(m[3])),)
+        flt = m[1].strip().lower()
+        if "," in flt or " and " in flt and flt != "instant and sorcery" or " or " in flt:     # a list of card types
+            flt = "types:" + "|".join(re.findall(r"artifact|creature|enchantment|instant|sorcery|planeswalker", flt))
+        rules['spell_tax'] = rules.get('spell_tax', ()) + ((flt, bool(m[2]), int(m[3])),)
         return True
     m = re.fullmatch(r"Prevent all (combat )?damage that would be dealt to ~( by creatures)?\.", line)
     if m:
@@ -775,6 +782,10 @@ def spell_tax(game, player, card):
             continue
         for flt, opponents_only, n in x.card.advanced_rules['spell_tax']:
             if opponents_only and x.controller is player:
+                continue
+            if flt.startswith('types:'):
+                if any(t.capitalize() in card.types for t in flt[6:].split('|')):
+                    total += n
                 continue
             if not flt or (flt == 'noncreature' and not card.is_creature) or (flt == 'instant and sorcery' and (card.is_instant or card.is_sorcery)) \
                     or flt in ('creature', 'artifact', 'enchantment', 'instant', 'sorcery') and flt.capitalize() in card.types:
