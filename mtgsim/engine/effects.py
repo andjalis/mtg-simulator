@@ -1,7 +1,7 @@
 """Game methods for game events that effects and rules cause: damage, destroy, sacrifice, dying, state-based actions."""
 from __future__ import annotations
 
-from .. import continuous, counter_mechanics, cx_static_damage, cx_triggers, that_much
+from .. import continuous, counter_mechanics, cx_static_damage, cx_triggers, that_much, this_way
 
 from .. import auras, cx_trig_damage, cx_trig_state
 from ..cards import AltCost, CardDef, Effect
@@ -125,6 +125,7 @@ class EffectsMixin:
         else:
             return
         self.last_dealt = amount
+        this_way.note_damage(self, target, amount)      # "if a creature is dealt damage this way" (#642)
         from ..batch1_templates import soul_link
         soul_link(self, source, target, amount)
         cx_triggers.on_damage(self, source, target, amount, combat)
