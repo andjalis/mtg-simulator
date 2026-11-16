@@ -275,6 +275,8 @@ from .. import cx_spent as _cx_spent  # noqa: E402
 _SUBS += _cx_spent.SUBS
 from .. import named_tokens as _named_tokens  # noqa: E402
 _EFFECT_PATTERNS += _named_tokens.EFFECT_PATTERNS
+from .. import divided_prevent as _divided_prevent  # noqa: E402
+_EFFECT_PATTERNS += _divided_prevent.EFFECT_PATTERNS
 from .. import library_peek as _library_peek  # noqa: E402
 _EFFECT_PATTERNS += _library_peek.EFFECT_PATTERNS
 _SUBS += _library_peek.SUBS
