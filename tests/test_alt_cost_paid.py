@@ -84,6 +84,18 @@ class Games(unittest.TestCase):
             self.assertEqual(perm.cast_kind, "spectacle" if spectacle else "")
             self.assertEqual(len(self.b.hand), 1 if spectacle else 2, f"spectacle={spectacle}")
 
+    def test_latchkey_faerie_prowl_is_a_named_cond_alt(self):
+        faerie = self.get("Latchkey Faerie")
+        kinds = [a.kind for a in faerie.alt_costs]
+        self.assertEqual(faerie.advanced_rules["alt_names"][kinds[0]], "prowl")
+        for kind, draws in ((kinds[0], 1), ("", 0)):
+            self.setUp()
+            hand = len(self.a.hand)
+            self.game._entry_cast = (False, True, 3, kind)      # as the resolving spell sets it (Game.resolve)
+            self.game.enter_battlefield(self.a, faerie)
+            self.game.settle()
+            self.assertEqual(len(self.a.hand), hand + draws, kind or "normal cost")
+
 
 if __name__ == "__main__":
     unittest.main()
