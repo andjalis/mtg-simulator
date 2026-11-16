@@ -309,3 +309,6 @@ _EFFECT_PATTERNS += _until_nonland.EFFECT_PATTERNS
 _SUBS += _until_nonland.SUBS
 from .. import another_target as _another_target  # noqa: E402  "another target creature you control" (#809)
 _SUBS += _another_target.SUBS
+from .. import cx_hand_hits as _cx_hand_hits  # noqa: E402  revealed hands (#631)
+_SUBS += _cx_hand_hits.SUBS
+_EFFECT_PATTERNS[:0] = _cx_hand_hits.EFFECT_PATTERNS
