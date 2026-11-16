@@ -531,3 +531,11 @@ def gy_cast_aftermath(game, p, eff, item, **_):
     else:
         game.move_card(card, owner.graveyard, owner.exile, reason="exile-instead")
         game.log(f"exiles {card.name} instead of putting it into a graveyard", p)
+
+
+@kind("gy_to_library")
+def gy_to_library(game, p, eff, item=None, **_):
+    """"Shuffle your graveyard / all creature cards / up to N target cards from your graveyard into your library"
+    (mtgsim.cx_gy_library)."""
+    from ...cx_gy_library import resolve
+    resolve(game, p, eff, item)

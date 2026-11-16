@@ -384,6 +384,9 @@ def effect_value(game, player, effect, target):
     from .engine.state import Permanent
     from .engine.policy import perm_value
     from .permanent_templates import matches
+    if effect.kind == 'gy_to_library':          # graveyard shuffled into the library (#632)
+        from .cx_gy_library import ai_value
+        return ai_value(game, player, effect)
     if effect.kind == 'selected_mass_move':
         return sum((1 if p is not player else -1) * perm_value(x) for p in game.players for x in p.battlefield
                    if matches(game, x, effect.data['selector'], player))
