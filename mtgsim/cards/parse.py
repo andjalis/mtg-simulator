@@ -513,7 +513,7 @@ def _kicker_instead(base: list, text: str) -> bool:
         return False
     old = base[hit[0]]
     first = new[0]
-    if first.target == "prev":
+    if first.target == "prev" or first.target == "that_player" and old.target in ("player", "opponent"):  # Hypnotic Cloud
         if first.kind != old.kind:
             return False
         new[0] = dataclasses.replace(first, target=old.target, data=dict(old.data, **first.data))
