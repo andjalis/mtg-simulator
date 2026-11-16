@@ -61,13 +61,28 @@ def more(sentence: str, effects: list, unmatched: list) -> bool:
     new = _build(m) if m else None
     from .cards.model import Effect
     if isinstance(new, Effect):
+        if old.data.get("next_turn_watch"):
+            new = Effect(new.kind, target=new.target, data={**new.data, "next_turn_watch": True})
         effects[-1] = new
     else:
         unmatched.append(sentence)
     return True
 
 
-EFFECT_PATTERNS = [(_LINE.pattern, _build)]
+# "Until your next turn, whenever <event>, <effects>." (planeswalkers, #839): the same delayed trigger, watched until
+# its controller's next turn begins instead of to the end of this turn.
+_NEXT = re.compile(r"until your next turn, whenever (?P<head>.+?), (?P<body>.+)", re.I)
+
+
+def _build_next(m):
+    from .cards.model import Effect
+    eff = _build(m)
+    if not isinstance(eff, Effect):
+        return eff
+    return Effect(eff.kind, target=eff.target, data={**eff.data, "next_turn_watch": True})
+
+
+EFFECT_PATTERNS = [(_NEXT.pattern, _build_next), (_LINE.pattern, _build)]
 
 
 def register(game, p, eff, item):
@@ -80,15 +95,22 @@ def register(game, p, eff, item):
     watcher.temp_triggers = list(eff.data["triggers"])
     if not hasattr(game, "cx_turn_watchers"):
         game.cx_turn_watchers = []
-    game.cx_turn_watchers.append((game.turn, watcher))
+    game.cx_turn_watchers.append((game.turn, watcher, p if eff.data.get("next_turn_watch") else None))
+
+
+def _live(game, turn, until) -> bool:
+    """This turn's watcher, or an "until your next turn" one before its controller's next turn begins."""
+    if turn == game.turn:
+        return True
+    return until is not None and not (game.turn > turn and game.active is until)
 
 
 def watchers(game) -> list:
-    """This turn's watchers (older ones are dropped)."""
-    live = [(turn, w) for turn, w in getattr(game, "cx_turn_watchers", ()) if turn == game.turn]
+    """The live watchers (expired ones are dropped)."""
+    live = [entry for entry in getattr(game, "cx_turn_watchers", ()) if _live(game, entry[0], entry[2])]
     if live or getattr(game, "cx_turn_watchers", None):
         game.cx_turn_watchers = live
-    return [w for _, w in live]
+    return [entry[1] for entry in live]
 
 
 # ---------------------------------------------------------------- AI
