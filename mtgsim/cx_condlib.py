@@ -35,6 +35,8 @@ _PLURAL_SUB = {"elves": "Elf", "dwarves": "Dwarf", "wolves": "Wolf", "plains": "
                "deserts": "Desert", "gates": "Gate"}
 
 
+_OUTLAWS = ["Assassin", "Mercenary", "Pirate", "Rogue", "Warlock"]     # rule 700.12
+
 def _n(word: str) -> int:
     word = word.lower()
     return int(word) if word.isdigit() else _WORDS[word]
@@ -109,6 +111,10 @@ def _word_spec(word: str, spec: dict, plural: bool = True) -> bool:
         spec[low] = True
     elif low in ("multicolored", "colorless", "monocolored"):
         spec["colorcount"] = low
+    elif low in ("outlaw", "outlaws"):          # rule 700.12
+        spec.setdefault("any_sub", []).extend(_OUTLAWS)
+    elif low == "non-outlaw":
+        spec.setdefault("not_any_sub", []).extend(_OUTLAWS)
     elif low.startswith("non") and low[3:] in _COLORS:
         spec.setdefault("not_colors", []).append(_COLORS[low[3:]])
     elif low in _COLORS:
@@ -135,6 +141,10 @@ def _word_spec(word: str, spec: dict, plural: bool = True) -> bool:
 def _filter(text: str, plural: bool = True, names: bool = False):
     """A permanent/card filter from "other untapped legendary creatures with flying", or None."""
     text = text.strip()
+    if re.fullmatch(r"enchanted permanents?", text):
+        # "an enchanted permanent": one with an Aura attached (#518). Only this exact phrase: "enchanted creature"
+        # in an Aura's text is the Aura's host, not a filter.
+        return {"enchanted": True, "types": ["permanent"]}
     spec: dict = {}
     named = names and re.fullmatch(r"(.+?) named (~|[A-Z][\w'-]*(?:,? (?:[A-Z][\w'-]*|of|the|and|de|la|to|from|in))*)", text)
     if named:       # "a creature named Bogbrew Witch", "four or more creatures named ~" (#314)
@@ -219,6 +229,8 @@ def _card_ok(card, spec: dict, perm=None) -> bool:
         return False
     if spec.get("any_sub") and not (set(spec["any_sub"]) & subs or card.changeling):
         return False
+    if spec.get("not_any_sub") and (set(spec["not_any_sub"]) & subs or card.changeling):
+        return False
     if spec.get("colors") and not all(c in card.colors for c in spec["colors"]):
         return False
     if any(c in card.colors for c in spec.get("not_colors", ())):
@@ -244,6 +256,8 @@ def _card_ok(card, spec: dict, perm=None) -> bool:
     if spec.get("snow") and not getattr(card, "snow", False):
         return False
     if spec.get("historic") and not (card.is_artifact or card.legendary or getattr(card, "is_saga", False)):
+        return False
+    if spec.get("enchanted") and (perm is None or not perm.auras):
         return False
     if perm is not None:
         if "tapped" in spec and bool(perm.tapped) != spec["tapped"]:
@@ -324,6 +338,7 @@ _ALIASES = {
     "you cast ~ from your hand": "lib:[\"from_hand\"]",
     "~ was cast from your hand": "lib:[\"from_hand\"]",
     "~ is attacking": "lib:[\"src_attacking\"]",
+    "~ is attached to a creature": "lib:[\"src_attached\"]",      # an Equipment / Aura on a creature (#625)
     "it's attacking": "lib:[\"src_attacking\",\"it\"]",
     "~ is tapped": "source_tapped",
     "~ is untapped": "source_untapped",
@@ -620,6 +635,11 @@ def _attacked(m):
     return _code("attacked", _n(m["n"]))
 
 
+@rule(r"~'s power is (?P<w>even|odd)")
+def _parity(m):
+    return _code("src_parity", m["w"].lower())      # Kianne, Corrupted Memory (#625)
+
+
 @rule(rf"there are (?P<n>{_NUM}) or more cards in exile")
 def _exile_total(m):
     return _code("exile_total", _n(m["n"]))
@@ -791,6 +811,16 @@ def _prev_is(m):
         return ""
     f = _filter(m["f"].replace(",", ""), plural=False)
     return _code("prev_is", f) if f is not None else ""
+
+
+@rule(r"you have max speed")
+def _max_speed(m):
+    return _code("speed", ">=", 4)      # Start your engines!: speed 4 is the maximum (#518)
+
+
+@rule(r"(?:(?:it's|it is) paired with a creature with soulbond|~ is paired with a creature(?: with soulbond)?)")
+def _paired(m):
+    return _code("paired")              # soulbond: a pairing always involves a creature with soulbond
 
 
 @rule(r"(?:it's|it is|that creature is) (?P<w>legendary|tapped|untapped|attacking|blocking|equipped|enchanted)")
@@ -1127,6 +1157,11 @@ def check(game, p, code: str, item=None, source=None, prev=None):
         who, spec, op, n = args
         pl = _player_for(game, p, who, item)
         return pl is not None and _cmp(_count_perms(pl, spec, source), op, n)
+    if kind == "speed":
+        return _cmp(getattr(p, "speed", 0), args[0], args[1])
+    if kind == "paired":
+        partner = getattr(source, "partner", None)
+        return partner is not None and any(partner in pl.battlefield for pl in game.players)
     if kind == "ctl_more":                  # the opponent controls at least n more than p
         spec, n = args
         return _count_perms(game.opponent(p), spec) - _count_perms(p, spec) >= n
@@ -1242,6 +1277,9 @@ def check(game, p, code: str, item=None, source=None, prev=None):
         return _cmp(len(getattr(game, "attackers", ()) or ()), *args)
     if kind == "exile":
         return any(True for _ in game.opponent(p).exile)
+    if kind == "src_parity":
+        power = getattr(source, "power", None)
+        return power is not None and power % 2 == (0 if args[0] == "even" else 1)
     if kind == "gy_types":
         return len({t for c in p.graveyard for t in c.types}) >= args[0]
     if kind == "any_gy":
@@ -1294,6 +1332,9 @@ def check(game, p, code: str, item=None, source=None, prev=None):
                                           for pl in game.players for x in pl.battlefield) >= n
     if kind == "src_attacking":
         return source is not None and source in getattr(game, "attackers", ())
+    if kind == "src_attached":
+        host = getattr(source, "attached_to", None) or getattr(source, "aura_host", None)
+        return host is not None and host.is_creature and host in host.controller.battlefield
     if kind == "src_tapped":
         return source is not None and bool(getattr(source, "tapped", False)) == args[0]
     if kind == "src_creature":

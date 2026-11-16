@@ -149,6 +149,10 @@ class AbilitiesMixin:
     def equip_cost(self, equipment: Permanent, creature: Permanent) -> dict:
         cost = dict(equipment.card.equip_cost or {})
         cost["generic"] = max(0, cost.get("generic", 0) - creature.card.equip_discount)
+        from ..advanced_templates import rules
+        discount = sum(rules(x).get("equip_discount", 0) for x in equipment.controller.battlefield)
+        if discount and cost.get("generic"):
+            cost["generic"] = max(0, cost["generic"] - discount)     # "Equip abilities you activate cost {1} less"
         return cost
 
     @atomic_action

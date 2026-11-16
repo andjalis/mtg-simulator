@@ -52,6 +52,10 @@ _SUBS = [
     # Planeswalkers rarely matter as the target: "creature or planeswalker you control gains ..." is the creature.
     (re.compile(r"target creature or planeswalker you control gains", re.I), "target creature you control gains"),
     # Two players: "for each opponent, tap ... that player controls" is the one opponent.
+    # ... and "each of those creatures" after it is that one target (#628)
+    (re.compile(r"for each opponent, (tap up to one target creature) that player controls\. (?:(put [^.]+? on) each of "
+                r"those creatures|each of those creatures (doesn't untap during its controller's next untap step))\.",
+                re.I), lambda m: f"{m[1]} an opponent controls. " + (f"{m[2]} it." if m[2] else f"It {m[3]}.")),
     (re.compile(r"for each opponent, (tap up to one target creature) that player controls", re.I),
      r"\1 an opponent controls"),
     (re.compile(r"tap up to one target creature\. it loses all abilities for as long as ~ remains on the battlefield\.",

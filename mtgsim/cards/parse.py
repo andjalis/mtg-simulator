@@ -309,7 +309,9 @@ def _parse_effects(text: str, opts: bool = False):
                         effects += [dataclasses.replace(e, cond=e.cond or cond) for e in new]
                         break
                 else:
-                    unmatched.append(sentence.strip())
+                    from ..cx_group_refs import cond_rider       # "If C, those creatures gain ..." (#628)
+                    if not cond_rider(cond, mi[2], effects):
+                        unmatched.append(sentence.strip())
                 continue
         first = len(effects)
         paid = reflexive = False
@@ -782,7 +784,8 @@ def _parse_ability_cost(text: str):
 
     A leading ability word ("Secrets of the Soul — ", "Vivid — ") is not part of the cost."""
     mana, extra = {"generic": 0}, {}
-    parts = text.split(", ")
+    parts = re.sub(r"(Pay half your life), (rounded (?:up|down))", r"\1@@\2", text).split(", ")
+    parts = [x.replace("@@", ", ") for x in parts]
     parts[0] = re.sub(r"^[A-Z][\w' ]* — ", "", parts[0])
     for part in parts:
         m = None
@@ -974,7 +977,8 @@ def _parse_trigger_line(line: str):
             flt = f"{'other' if m[1] == 'another' else 'any'}||{m[2]}"
         if events[0] in ("attacks", "blocks") and re.fullmatch(r"(?:sacrifice|destroy|return) it( to its owner's hand)? at end of combat\.?", rest):
             rest = rest.replace(" it", " ~", 1)      # "When ~ attacks or blocks, sacrifice it at end of combat"
-        if events in (("etb",), ("attacks",), ("blocks",)) and re.match(r"(?:sacrifice|exile|destroy) it unless ", rest):
+        if events in (("etb",), ("attacks",), ("blocks",), ("attacks", "blocks")) and \
+                re.match(r"(?:sacrifice|exile|destroy) it unless ", rest):
             rest = rest.replace(" it", " ~", 1)      # "When ~ enters|attacks, sacrifice it unless you ..." (#330)
         if events == ("attacks",) and "while saddled" in pat:
             flt = "saddled"

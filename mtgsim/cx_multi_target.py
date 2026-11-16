@@ -266,7 +266,7 @@ def max_count(game, p, eff):
 def lift(s: str, effects: list) -> bool:
     """Parse s, a sentence with one counted target ("up to two target creatures"), into effects. True if it did."""
     from .engine.state import TARGETED
-    if chain_rider(s, effects):
+    if chain_rider(s, effects) or _compound_rider(s, effects):
         return True
     outside = re.sub(r'"[^"]*"', '""', s)          # a quoted ability's own targets are its own
     if len(re.findall(r"\btarget\b", outside, re.I)) != 1:
@@ -360,11 +360,13 @@ def strive_cost(game, p, card, effects, targets, cost):
 
 
 _RIDER = re.compile(r"(untap|tap) (?:those creatures|them)|(?:they|those creatures) (gain|get) (.+)", re.I)
-_PLURAL_SUBJ = r"(?:those creatures|those permanents|those tokens|they|each of them)"
+_PLURAL_SUBJ = r"(?:those creatures|those permanents|those tokens|they|each of them|each of those creatures)"
 _SING_VERB = {"gain": "gains", "get": "gets", "gets": "gets", "gains": "gains", "can't": "can't", "don't": "doesn't",
-              "have": "has", "lose": "loses"}
-_PLURAL_RIDER = re.compile(rf"{_PLURAL_SUBJ} (gain|gains|get|gets|can't|don't|have|lose) (.+)", re.I)
-_PLURAL_PUT = re.compile(r"(put .+) on (?:each of them|them)", re.I)
+              "have": "has", "lose": "loses", "doesn't": "doesn't"}
+_PLURAL_RIDER = re.compile(rf"{_PLURAL_SUBJ} (gain|gains|get|gets|can't|don't|doesn't|have|lose) (.+)", re.I)
+_PLURAL_PUT = re.compile(r"(put .+) on (?:each of them|them|each of those creatures)", re.I)
+# "Those creatures don't untap during their controllers' next untap steps": each one's own controller's step
+_THEIR_STEPS = re.compile(r"\btheir controllers' next untap steps\b", re.I)
 _PLURAL_TAP = re.compile(r"(untap|tap) (?:those creatures|them|each of them)", re.I)
 _PLURAL_WORD = re.compile(r"\b(?:they|them|their|those|each)\b", re.I)
 
@@ -374,7 +376,7 @@ def singular_rider(s: str):
     or None. "Those creatures can't block this turn." -> "It can't block this turn."; "Each of them gets +1/+1
     until end of turn."; "Put a +1/+1 counter on each of them."; "Untap them."."""
     t = s.strip().rstrip(".")
-    m = _PLURAL_RIDER.fullmatch(t)
+    m = _PLURAL_RIDER.fullmatch(_THEIR_STEPS.sub("its controller's next untap step", t))
     if m:
         return None if _PLURAL_WORD.search(m[2]) else f"It {_SING_VERB[m[1].lower()]} {m[2]}."
     m = _PLURAL_PUT.fullmatch(t)
@@ -398,11 +400,45 @@ def _counted_run(effects: list):
         if width >= 1 and all(b - a == width for a, b in zip(run, run[1:])) and run[-1] + width == len(effects):
             return run
         return None
+    def same(e):     # "one or two target creatures": the copies after the first are optional_target
+        return dataclasses.replace(e, data={k: v for k, v in e.data.items() if k != "optional_target"})
     tail = len(effects)
     while tail and effects[tail - 1].data.get("distinct") and "group" not in effects[tail - 1].data and \
-            effects[tail - 1] == effects[-1]:
+            same(effects[tail - 1]) == same(effects[-1]):
         tail -= 1
     return list(range(tail, len(effects))) if len(effects) - tail >= 2 else None
+
+
+_LEGACY_TAP_WORD = {2: "two", 3: "three", 4: "four", 5: "five"}
+
+
+def _legacy_tap(eff):
+    """The counted copies for a "tap up to two target creatures" wording entry (one tap Effect whose amount is the
+    count, the extras picked on resolution), so a rider about "them" can follow each chosen target; or None."""
+    if eff.kind != "tap" or eff.target != "creature" or eff.data or eff.filter or eff.cond \
+            or eff.amount not in _LEGACY_TAP_WORD:
+        return None
+    copies = []
+    if not lift(f"Tap up to {_LEGACY_TAP_WORD[eff.amount]} target creatures", copies) or len(copies) != eff.amount:
+        return None
+    return copies
+
+
+_COMPOUND_RIDER = re.compile(r"(.+?\btarget\b.+?)(?:,? then|,? and) (put .+? on each of them|(?:untap|tap) them|they .+)",
+                             re.I)
+
+
+def _compound_rider(s: str, effects: list) -> bool:
+    """"Tap up to two target creatures and put a stun counter on each of them.": the counted part, then the rider."""
+    m = _COMPOUND_RIDER.fullmatch(s.strip().rstrip("."))
+    if m is None:
+        return False
+    from .cards.parse import _parse_effects
+    new, bad = _parse_effects(m[1][0].upper() + m[1][1:] + ".")
+    if bad or not new or not chain_rider(m[2][0].upper() + m[2][1:] + ".", new):
+        return False
+    effects += new
+    return True
 
 
 def chain_rider(s: str, effects: list) -> bool:
@@ -410,10 +446,16 @@ def chain_rider(s: str, effects: list) -> bool:
     a counted or "any number of target" Effect: more of the chain each chosen target gets."""
     if not effects:
         return False
+    caller, legacy = effects, _legacy_tap(effects[-1])
+    if legacy:      # read on a copy: the caller's list changes only when the rider is read
+        effects = list(effects[:-1]) + legacy
     multi = effects[-1].kind == "cx_multi"
     run = None if multi else _counted_run(effects)
     if not multi and run is None:
         return False
+    chosen = effects[-1].data["probe"] if multi else effects[run[0]]
+    if chosen.target.endswith("_card") or chosen.kind == "cx_card_move":
+        return False        # cards chosen in a graveyard: "it" afterwards is not the permanent they became
     text = singular_rider(s)
     if text is None:
         m = _RIDER.fullmatch(s.strip().rstrip("."))
@@ -432,7 +474,7 @@ def chain_rider(s: str, effects: list) -> bool:
     for a, b in zip(run, run[1:] + [len(effects)]):
         out.extend(effects[a:b])
         out.extend(dataclasses.replace(e, data=dict(e.data)) for e in new)
-    effects[:] = out
+    caller[:] = out
     return True
 
 

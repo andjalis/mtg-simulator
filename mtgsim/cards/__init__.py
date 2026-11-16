@@ -257,6 +257,8 @@ from .. import card_referent as _card_referent
 _EFFECT_PATTERNS += _card_referent.EFFECT_PATTERNS
 from .. import cx_attach as _cx_attach
 _EFFECT_PATTERNS += _cx_attach.EFFECT_PATTERNS
+from .. import cx_replace_amounts as _cx_replace_amounts       # counter-amount replacements (#407)
+_parse_module._FACE_LINE_PARSERS = (_cx_replace_amounts.face_line,) + _parse_module._FACE_LINE_PARSERS
 from .. import cx_static_cost as _cx_static_cost  # one-shot spell-group discounts (#341)
 _EFFECT_PATTERNS += _cx_static_cost.EFFECT_PATTERNS
 from .. import cx_exile_play as _cx_exile_play          # "exile the top card of that player's library" (#316)
@@ -272,6 +274,8 @@ from .. import bounce_own as _bounce_own  # noqa: E402
 _EFFECT_PATTERNS += _bounce_own.EFFECT_PATTERNS
 from .. import free_cast as _free_cast  # noqa: E402  "cast a spell from your hand without paying its mana cost" (#625)
 _EFFECT_PATTERNS += _free_cast.EFFECT_PATTERNS
+from .. import cx_dmg_equal as _cx_dmg_equal  # noqa: E402  damage equal to a quantity (#626)
+_EFFECT_PATTERNS += _cx_dmg_equal.EFFECT_PATTERNS
 from .. import cx_chosen_type as _cx_chosen_type  # noqa: E402  "Choose a creature type." on resolution (#627)
 _SUBS[:0] = _cx_chosen_type.SUBS
 _EFFECT_PATTERNS[:0] = _cx_chosen_type.EFFECT_PATTERNS

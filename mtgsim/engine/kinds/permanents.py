@@ -25,7 +25,7 @@ def destroy(game, p, eff, target, item, **_):
                 game.draw(p)
         if did:
             from ..state import note_this_way
-            note_this_way(item, "destroyed", ["creature"] if target.is_creature else ["permanent"], 1)
+            note_this_way(item, "destroyed", ["creature", "permanent"] if target.is_creature else ["permanent"], 1)
 
 
 @kind("wrath")
@@ -36,7 +36,7 @@ def wrath(game, p, eff, opp, item=None, **_):
         if game.destroy(perm, no_regen=eff.data.get("no_regen", False), counter_sources=sources):
             n += 1
     from ..state import note_this_way
-    note_this_way(item, "destroyed", ["creature"], n)
+    note_this_way(item, "destroyed", ["creature", "permanent"], n)
 
 
 @kind("destroy_all")
@@ -49,7 +49,7 @@ def destroy_all(game, p, eff, opp, item=None, **_):
         if game.destroy(perm, counter_sources=sources):
             n += 1
     from ..state import note_this_way
-    note_this_way(item, "destroyed", [kind, "permanent"], n)
+    note_this_way(item, "destroyed", [kind.lower(), "permanent"], n)
 
 
 @kind("wrath_pw")

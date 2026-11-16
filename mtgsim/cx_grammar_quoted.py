@@ -11,8 +11,9 @@ The grammar core does not look inside quotes, so a rider first masks the quoted 
 recipient the parsed Triggers (``cx_trigger_grants.quoted_triggers``) with the existing ``grant_triggers`` kind
 (the recipient's ``temp_triggers``, cleared at cleanup, kept in the departure snapshot for dies triggers). A group
 subject is a one-shot ``cx_group``: the creatures it affects are fixed when the spell resolves, so a creature that
-arrives later doesn't gain the ability. Only "until end of turn" is accepted; a quote that hurts its holder is
-refused for now (the AI would give it to its own creature).
+arrives later doesn't gain the ability. "Until end of turn" is accepted, and no duration for a single permanent ("It
+gains "..."": kept in its ``gained_triggers`` while it stays on the battlefield, #540); a quote that hurts its
+holder is refused for now (the AI would give it to its own creature).
 """
 from __future__ import annotations
 
@@ -44,6 +45,13 @@ def _mask(m, inner):
 @verb(r"gains? (qtrig\d+)", heads=("gain", "gains"), subjects=("permanent", "group"))
 def gains_quoted(m, clause):
     triggers = _PENDING.get(m[1])
-    if triggers is None or clause.duration != "eot":
+    if triggers is None:
+        return None
+    if clause.duration == "" and clause.subject.kind == "permanent" and clause.subject.target != "self":
+        # "It gains "...": a one-shot change with no duration: the object keeps the ability for as long as it stays on
+        # the battlefield (a new object if it leaves and returns) (#540). Not "~ gains": in a cast trigger ~ is still
+        # a spell, and nothing carries a spell's gained ability onto the permanent (Thief of Existence).
+        return [Part("grant_triggers", data={"triggers": list(triggers), "permanent": True})]
+    if clause.duration != "eot":
         return None
     return [Part("grant_triggers", data={"triggers": list(triggers)})]

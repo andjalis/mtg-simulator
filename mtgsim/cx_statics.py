@@ -280,7 +280,24 @@ def _restrict(m):
                         "optional_target": bool(g.get("up"))})
 
 
+def _linked_animate(m):
+    """"<target> becomes a 4/4 artifact creature for as long as ~ remains tapped / remains on the battlefield"
+    (The Blackstaff of Waterdeep, Skilled Animator): the grammar's animation with its end-of-turn duration swapped
+    for one tied to the source (``linked`` mode; ``effect_alive``). "For as long as you control ~" stays unmatched:
+    nothing refreshes the animated permanent when control of the source changes."""
+    import dataclasses
+    from .cards import NO_MATCH, _parse_effects
+    mode = _mode(m["d"])
+    if "controlled" in mode:
+        return NO_MATCH
+    effects, bad = _parse_effects(m["body"][0].upper() + m["body"][1:] + " until end of turn.")
+    if bad or len(effects) != 1 or effects[0].kind != "cx_animate" or not effects[0].data.get("eot"):
+        return NO_MATCH
+    return dataclasses.replace(effects[0], data=dict(effects[0].data, eot=False, linked=mode))
+
+
 EFFECT_PATTERNS = [
+    (rf"(?P<body>(?:another )?target [^.]+? becomes [^.]+?) {_DUR}", _linked_animate),
     (r"(?P<up>up to one )?target creature can't (?P<what>attack or block|attack|block) "
      r"for as long as (?P<d>you control ~)", lambda m: _restrict(dict(m.groupdict(), who=None))),
     (rf"(?:you may )?gain control of (?P<up>up to one )?target (?P<f>[\w ,'~-]+?) {_DUR}", _control),
@@ -414,8 +431,32 @@ def counter_changed(perm, name):
         game._linked_statics = [x for x in links if x not in removed]
 
 
+def link_effect(game, effect, mode, giver):
+    """Tie a continuous effect (whose source is the linked source) to a "for as long as" duration."""
+    if not hasattr(game, "_effect_links"):
+        game._effect_links = {}
+    game._effect_links[effect.id] = (mode, giver)
+
+
+def effect_alive(game, effect) -> bool:
+    """continuous.active: a linked continuous effect lasts while its duration does (a broken "remains tapped" never
+    comes back)."""
+    links = getattr(game, "_effect_links", None)
+    if not links or effect.id not in links:
+        return True
+    mode, giver = links[effect.id]
+    return mode != "broken" and linked_ok(effect.source, mode, giver)
+
+
 def on_untap(game, source):
     """"~ remains tapped" ends for good when ~ untaps, even if it's tapped again later."""
+    elinks = getattr(game, "_effect_links", None)
+    if elinks:
+        from . import continuous
+        for e in [e for e in game.continuous_effects if e.source is source and e.id in elinks
+                  and "tapped" in elinks[e.id][0]]:
+            elinks[e.id] = ("broken", None)
+            continuous.refresh(e.target)
     links = getattr(game, "_linked_statics", None)
     if links:
         game._linked_statics = [x for x in links if not (x.source is source and "tapped" in x.mode)]

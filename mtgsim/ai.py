@@ -993,6 +993,13 @@ class HeuristicAI:
                     return None
                 targets.append(tgt)
                 value += 1.0
+            elif eff.kind == "divided_damage":     # the division itself is planned as it goes on the stack
+                from .cx_damage import ai_worth
+                v = ai_worth(self, game, me, eff, card, instant)
+                if v is None:
+                    return None
+                targets.append(None)
+                value += v
             elif eff.kind == "add_mana":
                 targets.append(None)      # value already counted once by _mana_spell_value
             else:
