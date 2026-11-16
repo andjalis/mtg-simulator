@@ -21,7 +21,7 @@ from __future__ import annotations
 
 import re
 
-from .cx_grammar import Part, object_phrase, verb
+from .cx_grammar import Part, ai_value, object_phrase, verb
 
 _NUM = {"a": 1, "an": 1, "one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8,
         "nine": 9, "ten": 10}
@@ -80,3 +80,94 @@ def sacrifice_many(m, clause):
         return None
     group = _group(noun, n)
     return [Part("cx_edict", n, data={"noun": group, "scales": True})] if group else None
+
+
+# ---------------------------------------------------------------- "chooses N ..., then sacrifices the rest"
+#
+#   Each player chooses up to two creatures they control, then sacrifices the rest.        (Covetous Elegy)
+#   Each player chooses from among the permanents they control an artifact, a creature, an enchantment, and a land,
+#   then sacrifices the rest.                                                              (Cataclysm)
+#   Each player sacrifices all lands they control except for three.                        (Keldon Firebombers)
+#
+# The sentence is rewritten (SUBS) to one private verb, "<players> keepsacrifices <keep> | <scope>", so the chain
+# splitter doesn't cut it at ", then". ``cx_keep`` (engine/kinds/cx_grammar_edicts.py): each player keeps the most
+# valuable permanents that match (their own interest), one per listed noun or N of one noun, and sacrifices every other
+# permanent of the scope at once.
+
+_SUBJ = r"(each player|each opponent|that player|target player|target opponent|defending player)"
+_PERMANENT_TYPES = "artifact, creature, enchantment, land, planeswalker, battle"
+_BASICS = "plains, island, swamp, mountain, forest"
+
+
+def _items(text: str) -> str:
+    return ", ".join(re.sub(r"^(?:an?|one) ", "", i.strip()) for i in re.split(r",\s*(?:and\s+)?|\s+and\s+", text)
+                     if i.strip())
+
+
+SUBS = [
+    (re.compile(rf"\b{_SUBJ} chooses (up to )?(two|three|four|five|six|seven) ([a-z ]+?) they control,? "
+                r"(?:then|and) sacrifices the rest", re.I),
+     lambda m: f"{m[1]} keepsacrifices {m[2] or ''}{m[3]} {m[4]} | {m[4]}"),
+    (re.compile(rf"\b{_SUBJ} chooses from among the (permanents|nonland permanents) they control "
+                r"((?:an? [a-z]+, )+and an? [a-z]+), then sacrifices the rest", re.I),
+     lambda m: f"{m[1]} keepsacrifices {_items(m[3])} | {m[2]}"),
+    (re.compile(rf"\b{_SUBJ} chooses ((?:an? [a-z]+, )+and an? [a-z]+) from among the (permanents|nonland permanents) "
+                r"they control, then sacrifices the rest", re.I),
+     lambda m: f"{m[1]} keepsacrifices {_items(m[2])} | {m[3]}"),
+    (re.compile(rf"\b{_SUBJ} chooses a permanent they control of each permanent type and sacrifices the rest", re.I),
+     lambda m: f"{m[1]} keepsacrifices {_PERMANENT_TYPES} | permanents"),
+    (re.compile(rf"\b{_SUBJ} chooses from the lands they control a land of each basic land type, then sacrifices "
+                r"the rest", re.I),
+     lambda m: f"{m[1]} keepsacrifices {_BASICS} | lands"),
+    (re.compile(rf"\b{_SUBJ} sacrifices all lands they control except for (two|three|four|five|six|seven)", re.I),
+     lambda m: f"{m[1]} keepsacrifices {m[2]} lands | lands"),
+]
+
+_SUBTYPE_NOUNS = {"plains": "Plains", "island": "Island", "swamp": "Swamp", "mountain": "Mountain", "forest": "Forest"}
+
+
+def _noun(word: str):
+    """A battlefield group for one singular noun of a keep list ("artifact", "planeswalker", "swamp")."""
+    if word.lower() in _SUBTYPE_NOUNS:
+        return {"selector": {"subtypes": [word.lower()], "types_all": ["land"]}}
+    return _group(word, 1)
+
+
+@verb(r"keepsacrifices (.+?) \| (.+)", heads=("keepsacrifices",), subjects=("player",))
+def keep_sacrifice(m, clause):
+    keep_text, scope_text = m[1].strip(), m[2].strip()
+    scope = object_phrase("all " + scope_text)
+    if clause.duration or scope is None or scope.kind != "group":
+        return None
+    counted = re.fullmatch(r"(up to )?(two|three|four|five|six|seven) (.+)", keep_text, re.I)
+    keep = []
+    if counted:
+        group = _group(counted[3], _NUM[counted[2].lower()])
+        if group is None:
+            return None
+        keep.append([group, _NUM[counted[2].lower()]])
+    else:
+        for word in [w.strip() for w in keep_text.split(",") if w.strip()]:
+            group = _noun(word)
+            if group is None:
+                return None
+            keep.append([group, 1])
+    return [Part("cx_keep", data={"keep": keep, "scope": scope.group})]
+
+
+@ai_value("cx_keep")
+def _keep_value(game, me, eff, obj):
+    """What that player would sacrifice (everything of the scope but its most valuable keeps), signed by who loses it."""
+    from .cx_grammar import group_members
+    from .engine.policy import perm_value
+    from .engine.state import Player
+    if not isinstance(obj, Player):
+        return 0.0
+    scope = group_members(game, obj, {"group": eff.data["scope"]}, None, obj)
+    kept: list = []
+    for group, n in sorted(eff.data["keep"], key=lambda k: len(group_members(game, obj, {"group": k[0]}, None, obj))):
+        free = sorted((x for x in group_members(game, obj, {"group": group}, None, obj) if x not in kept),
+                      key=perm_value, reverse=True)
+        kept += free[:n]
+    lost = sum(perm_value(x) for x in scope if x not in kept)
+    return lost if obj is not me else -lost
