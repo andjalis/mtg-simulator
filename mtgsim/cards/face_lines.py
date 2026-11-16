@@ -964,8 +964,10 @@ def _face_cost_and_static_lines(st, line):
         if m:
             extra["pt_if"] = extra.get("pt_if", ()) + (("delirium", int(m[1]), int(m[2])),)
             return None
-        if line in ("Partner", "Choose a Background", "Friends forever", "Assist", "Doctor's companion"):
-            return None          # deck-building or teammate rules: nothing to do in a two-player game
+        if line in ("Partner", "Choose a Background", "Friends forever", "Assist", "Doctor's companion",
+                    "~ can be your commander.", "~ can be your Commander.", "Spell commander") or \
+                re.fullmatch(r"~ can be your commander\. If it is, your deck can contain [^.]+\.", line):
+            return None          # deck-building or teammate rules: nothing to do in a two-player game (no Commander format, #839)
         if line == "Umbra armor" or line == "Totem armor":
             extra["umbra_armor"] = True
             return None
