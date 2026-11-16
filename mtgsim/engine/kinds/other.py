@@ -103,6 +103,9 @@ def craft(game, p, item, **_):
 
 @kind("counter", "bounce_spell")
 def counter(game, p, eff, target, item, **_):
+    if eff.data.get("ctx_spell"):       # "return that spell to its owner's hand" on a cast trigger (Krark)
+        ctx = getattr(item, "context", None)
+        target = ctx if isinstance(ctx, StackItem) else None
     if eff.data.get("redirect"):       # "Change the target of target spell with a single target" (cx_night_redirect)
         from .cx_night_redirect import redirect_spell
         if eff.amount and isinstance(target, StackItem):       # Divert: "... unless that spell's controller pays {N}"
@@ -136,6 +139,13 @@ def add_mana(game, p, eff, **_):
     if add_special(game, p, eff):
         return
     colors = list(eff.data["colors"])
+    if eff.data.get("devotion_choice"):        # "Choose a color. Add ... equal to your devotion to that color" (Nyx Lotus)
+        from ...cx_abil_mana import devotion_pick
+        color, n = devotion_pick(p)
+        p.last_added_mana = [Permanent(pool_mana(color), p) for _ in range(n)]
+        p.pool.extend(p.last_added_mana)
+        game.log(f"adds {color * n} (devotion to {color})", p)
+        return
     if eff.data.get("choice"):                 # "{U} or {R}", "one mana of any color": what the hand needs most
         need = {c: sum(card.mana_cost.get(c, 0) for card in p.hand) for c in eff.data["choice"]}
         colors.append(max(eff.data["choice"], key=lambda c: need[c]))

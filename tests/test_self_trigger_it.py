@@ -29,8 +29,6 @@ class Parsing(unittest.TestCase):
         for text in ("Whenever another creature enters, you may have it fight another target creature.",
                      "Whenever another creature enters, you may have it deal damage to target creature equal to the "
                      "number of artifacts you control.",
-                     "Whenever a creature attacks, you may have it deal 1 damage to each creature defending player "
-                     "controls.",
                      "Whenever this creature attacks, you may have it deal 1 damage to target creature defending "
                      "player controls and 1 damage to you."):
             self.assertNotEqual(self.full(text).unsupported, [], text)

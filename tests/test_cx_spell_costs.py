@@ -30,8 +30,8 @@ class Parse(unittest.TestCase):
 
     def test_refusals(self):
         for text in ("sacrifice X creatures", "discard X cards", "pay X life", "sacrifice any number of creatures",
-                     "sacrifice a creature that dealt damage this turn", "sacrifice half the lands you control, rounded up",
-                     "behold a Goblin", "behold a Goblin and sacrifice it", "blight 2 or pay {1}", "forage or pay {B}",
+                     "sacrifice a creature that dealt damage this turn", "sacrifice half the lands you control",
+                     "behold a Goblin", "behold a Goblin and sacrifice it", "blight X", "blight X or pay {1}",
                      "sacrifice a creature or pay {X}", "discard a widget"):
             self.assertIsNone(parse_cost(text), text)
 
@@ -47,7 +47,7 @@ class RealCards(unittest.TestCase):
             "Deprive", "Dusk Mangler", "Final Payment", "Kaervek's Spite", "Lethal Sting", "Natural Order",
             "Phyrexian Tribute", "Ruthless Disposal", "Savage Order", "Shared Discovery", "Spark Harvest",
             "Surge of Strength", "Magmatic Insight", "Guardian of the Great Door", "Soaring Stoneglider")
-    STILL_PARTIAL = ("Treacherous Greed", "Hatred", "Vicious Betrayal", "Tectonic Split")
+    STILL_PARTIAL = ("Treacherous Greed", "Hatred", "Vicious Betrayal", "Soul Immolation")
 
     @classmethod
     def setUpClass(cls):

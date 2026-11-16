@@ -147,7 +147,7 @@ def ability_plan(game, player, permanent, ability, cost, *, x=None, counter_choi
         if tap_other is not None:
             excluded.append(tap_other)
         excluded += [donor for donor, _, _ in counters if consumed_for_mana(donor)]
-        own = ((permanent, costs['remove_counter'], costs.get('remove_counter_count', 1)),) if costs.get('remove_counter') else ()
+        own = ((permanent, costs['remove_counter'], _own_count(permanent, costs)),) if costs.get('remove_counter') else ()
         if own and consumed_for_mana(permanent):
             excluded.append(permanent)
         result = plan(game, player, cost, spell=AbilityPayment(permanent), sacrifices=choices, materials=materials,
@@ -189,7 +189,7 @@ def creature_counter_payments(player, source, costs, *, x=None, choices=None):
         for kind, count in donor.counters.items():
             if counter_kind != 'any' and kind != counter_kind:
                 continue
-            count -= costs.get('remove_counter_count', 1) if donor is source and costs.get('remove_counter') == kind else 0
+            count -= _own_count(source, costs) if donor is source and costs.get('remove_counter') == kind else 0
             if count > 0:
                 donors.append((donor, kind, count))
     donors.sort(key=lambda v: (v[1] == '+1/+1', consumed_for_mana(v[0]), perm_value(v[0]), v[1]))
@@ -229,3 +229,9 @@ def creature_counter_payments(player, source, costs, *, x=None, choices=None):
 
     for needed in amounts:
         yield from allocate(0, needed, ())
+
+
+def _own_count(permanent, costs) -> int:
+    """Counters a "Remove N <kind> counters from ~" cost takes from the source; for X, all of them may go (#345)."""
+    n = costs.get('remove_counter_count', 1)
+    return permanent.counters.get(costs['remove_counter'], 0) if n == 'x' else n

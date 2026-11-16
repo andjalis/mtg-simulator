@@ -907,7 +907,9 @@ class CostsMixin:
                     and not (card.is_sorcery and (player_flag(self, p, "sorcery_flash") or any(
                         x.card.advanced_rules.get("sorcery_flash") and not x.abilities_suppressed
                         for x in p.battlefield))):
-                return False
+                from ..cx_flash_perm import flash_allowed
+                if not flash_allowed(self, p, card):
+                    return False
         if any(e.target == "spell" and not e.data.get("optional_target") and not self.legal_targets(p, e)
                for e in card.spell_effects):
             return False

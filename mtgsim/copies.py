@@ -534,11 +534,16 @@ def parse_line(line: str) -> dict | None:
 
 # ------------------------------------------------------------------ the engine side
 
+# the separators of a description's alternatives: "A or B", "A, B, or C", "A and B", "A, B, and C", "A and/or B"
+ALTERNATIVES = re.compile(r",? and/or |,? or |,? and |, ")
+
+
 def fits(card, what: str, perm=None) -> bool:
     """Whether a card (or permanent) is one of "artifact or creature", "nonland permanent", "Elemental",
-    "nontoken creature", "artifact token", "artifact, creature, or land" ..."""
+    "nontoken creature", "artifact token", "artifact, creature, or land" ... "and" between nouns is a union too:
+    "instant and sorcery cards" are the cards that are an instant or a sorcery (#449)."""
     is_creature = perm.is_creature if perm is not None else card.is_creature
-    for alt in re.split(r",? or |, ", what.strip()):
+    for alt in ALTERNATIVES.split(what.strip()):
         ok = True
         for w in alt.split():
             lw = w.lower()

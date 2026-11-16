@@ -18,6 +18,8 @@ class ResolveMixin:
         if eff.target == "that_player" and item is not None:
             ctx = item.context
             target = ctx.controller if isinstance(ctx, StackItem) else ctx   # any_cast: the cast spell's caster
+            if target is None and isinstance(prev, Permanent):
+                target = prev.owner      # "Return target permanent to its owner's hand. Then that player discards" (#609)
         if eff.target == "trigger_subject" and item is not None:
             target = item.context if isinstance(item.context, Permanent) and item.context in item.context.controller.battlefield \
                 else None

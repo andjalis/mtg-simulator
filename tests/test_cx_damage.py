@@ -92,3 +92,41 @@ class TwoTargets(DividedDamage):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class DividedQualified(DividedDamage):
+    """#626 DMG-DIVIDED: X, "up to N", and qualified recipients."""
+    def test_parses_real_shapes(self):
+        for text in ("deals X damage divided as you choose among any number of target creatures.",
+                     "deals 3 damage divided as you choose among one, two, or three target attacking or blocking creatures.",
+                     "deals 3 damage divided as you choose among one, two, or three target creatures with flying.",
+                     "deals 3 damage divided as you choose among one, two, or three target white and/or blue creatures.",
+                     "deals 5 damage divided as you choose among up to five targets.",
+                     "deals X damage divided as you choose among any number of target attacking or blocking creatures "
+                     "without flying."):
+            c = card("Test Spell", "{X}{R}", "Sorcery", "Test Spell " + text)
+            self.assertEqual(c.unsupported, [], text)
+        c = card("Test Spell", "{2}{R}", "Sorcery", "Test Spell deals 3 damage divided as you choose among up to X targets.")
+        self.assertTrue(c.unsupported)
+
+    def test_x_damage_is_divided_by_the_x_paid(self):
+        spell = card("Test Fire Covenant", "{X}{R}", "Instant", "Test Fire Covenant deals X damage divided as you choose "
+                     "among any number of target creatures.")
+        bear = self.perm(BEAR, self.b)
+        big = self.perm(DRAGON3, self.b)
+        item = StackItem(self.a, list(spell.spell_effects), [None], card=spell, name=spell.name)
+        item.x = 2
+        self.game.stack.append(item)
+        self.game.resolve_top()
+        self.assertNotIn(bear, self.b.battlefield)
+        self.assertEqual(big.damage, 0)
+
+    def test_attacking_or_blocking_only(self):
+        spell = card("Test Roil", "{3}{R}", "Instant", "Test Roil deals 5 damage divided as you choose among any number "
+                     "of target attacking or blocking creatures.")
+        idle = self.perm(BEAR, self.b)
+        attacker = self.perm(BEAR, self.b)
+        self.game.attackers = [attacker]
+        self.cast(spell)
+        self.assertIn(idle, self.b.battlefield)
+        self.assertNotIn(attacker, self.b.battlefield)

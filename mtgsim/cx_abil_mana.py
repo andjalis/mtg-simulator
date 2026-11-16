@@ -193,6 +193,15 @@ def add_special(game, p, eff) -> bool:
 
 # ---- the AI -------------------------------------------------------------------------------------------------------
 
+def devotion_pick(p):
+    """(colour, devotion) for "Choose a color. Add ... equal to your devotion to that color": the colour with the
+    most devotion, ties going to the colour the hand needs most."""
+    from .cx_static_cond import devotion
+    need = {c: sum(card.mana_cost.get(c, 0) for card in p.hand) for c in _WUBRG}
+    color = max(_WUBRG, key=lambda c: (devotion(p, (c,)), need[c]))
+    return color, devotion(p, (color,))
+
+
 def _mana_abilities(game, me):
     """(permanent, index, mana it adds, restriction code or "") for activated abilities that only add mana."""
     from .cx_abil_costs import ai_cost_ok
@@ -216,7 +225,9 @@ def _mana_abilities(game, me):
                     adds += max(1, e.amount)
                     continue
                 n = max(1, e.amount)
-                if e.data.get("xq"):    # a counted amount ("for each ..."): estimate what it makes now
+                if e.data.get("devotion_choice"):
+                    n = devotion_pick(me)[1]
+                elif e.data.get("xq"):    # a counted amount ("for each ..."): estimate what it makes now
                     from types import SimpleNamespace
                     n = game.x_quantity(me, e.data["xq"],
                                         SimpleNamespace(source=perm, card=perm.card, context=None), None)
