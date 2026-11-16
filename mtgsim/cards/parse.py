@@ -263,6 +263,8 @@ def _parse_effects(text: str, opts: bool = False):
             new, bad = [], True
             for one in ("1", "one", "a"):
                 body = re.sub(r"\bX\b", one, mx[1])
+                if one == "a" and re.search(r"\ba (?:[a-z-]+ )*?(?:creatures|permanents|lands|artifacts|enchantments)\b", body):
+                    continue    # "tap a creatures" would read as every creature: "X <nouns>" is a count (#634)
                 if one != "1":
                     body = re.sub(r"\b(creature |artifact )?tokens\b", r"\1token", body)
                 body = re.sub(rf"\b{one} (cards|life)\b", lambda m: f"{one} {m[1][:-1] if m[1] == 'cards' else m[1]}", body)

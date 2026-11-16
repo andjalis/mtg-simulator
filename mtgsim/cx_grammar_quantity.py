@@ -79,6 +79,9 @@ def quantity(text: str):
     """The ("cxq", ...) spec for a quantity phrase, or None."""
     t = re.sub(r"\s+", " ", text.strip().rstrip("."))
     low = t.lower()
+    from .random_choices import quantity as random_quantity      # "a number from 2 to 6 chosen at random" (#634)
+    if random_quantity(low):
+        return random_quantity(low)
     m = re.fullmatch(r"your devotion to (white|blue|black|red|green)(?: and (white|blue|black|red|green))?", low)
     if m:
         return ("cxq", "devotion", "".join(_COLORS[c] for c in m.groups() if c))
@@ -240,6 +243,9 @@ def _stat(perm, stat: str) -> int:
 
 def value(game, p, spec, item, prev) -> int:
     kind = spec[1]
+    if kind == "random":        # drawn from the game's seeded generator (#634)
+        from .random_choices import value as random_value
+        return random_value(game, spec)
     if kind == "tw":
         return this_way.value(game, p, spec, item)
     if kind == "flips":

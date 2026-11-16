@@ -4,10 +4,12 @@ from . import kind
 
 
 @kind("reveal_random")
-def reveal_random(game, p, target, item=None, **_):
+def reveal_random(game, p, target, eff, item=None, **_):
     """"Target player reveals a card at random from their hand": the card stays in the hand; "that card" is it."""
     from ...referent import remember_card
     remember_card(item, None)
+    if target is None and eff.target == "none":
+        target = p          # "reveal a card from your hand at random" (#634)
     if not isinstance(target, Player) or not target.hand:
         return
     card = game.rng.choice(target.hand)
