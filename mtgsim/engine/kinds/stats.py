@@ -1,7 +1,6 @@
 """Creature stats and state: pump, counters, keywords, tapping, combat restrictions."""
 from __future__ import annotations
 
-from ... import protection
 from ..policy import default_choose_target, perm_value
 from ..state import Permanent, Player, StackItem
 from . import kind
@@ -191,8 +190,9 @@ def grant(game, p, eff, target, item, **_):
         target = item.source.attached_to
     if isinstance(target, Permanent):
         keyword = eff.data["keyword"]
-        if keyword == protection.CHOICE:
-            keyword = protection.choose_color(game, p, target)
+        from ...protection_choice import choose, is_choice
+        if is_choice(keyword):                  # "... from artifacts or from the color of your choice" (#643)
+            keyword = choose(game, p, target, keyword)
             game.log(f"{target.card.name} gains {keyword}", p)
         elif keyword.startswith("choice:"):        # "your choice of flying, vigilance, or lifelink": the best one it lacks
             options = keyword[7:].split("|")

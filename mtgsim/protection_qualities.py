@@ -25,7 +25,8 @@ import re
 _HEX_TYPES = {"artifacts": "Artifact", "creatures": "Creature", "enchantments": "Enchantment",
               "planeswalkers": "Planeswalker"}
 KEYWORDS = frozenset({"protection from each color", "hexproof from each color", "protection from legendary creatures",
-                      "protection from modified creatures"} | {f"hexproof from {w}" for w in _HEX_TYPES})
+                      "protection from modified creatures", "protection from colorless"}
+                     | {f"hexproof from {w}" for w in _HEX_TYPES})
 
 _MV = re.compile(r"(?:[A-Z][\w' ]* — )?Protection from mana value (\d+) or (greater|less)")
 
@@ -50,7 +51,8 @@ def protected(perm, card, source) -> bool:
     mv = perm.card.advanced_rules.get("protection_mv") if perm.card.advanced_rules else None
     if mv and not perm.abilities_suppressed and (card.cmc >= mv[0] if mv[1] == "greater" else card.cmc <= mv[0]):
         return True
-    if card.colors and perm.has("protection from each color"):
+    if card.colors and perm.has("protection from each color") or not card.colors and \
+            perm.has("protection from colorless"):
         return True
     if isinstance(source, Permanent) and source.is_creature:
         if card.legendary and perm.has("protection from legendary creatures"):

@@ -193,7 +193,8 @@ def keyword_list(text: str):
         from .cards.model import KEYWORDS
         out = [f"protection from {c.lower()}" for c in m.groups() if c]
         return out if all(k in KEYWORDS for k in out) else None
-    return None
+    from .protection_choice import keyword_list as choice_list     # "... the color of your choice" (#643)
+    return choice_list(text)
 
 
 def count(word: str):
