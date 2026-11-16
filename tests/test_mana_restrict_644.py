@@ -54,8 +54,7 @@ class Parse(unittest.TestCase):
     def test_refusals(self):
         for text in ("to cast a creature spell of the chosen type or activate an ability of a creature of the chosen type",
                      "to cast a legendary creature spell", "to cast a nonland creature spell",
-                     "to activate an ability of a creature you control",
-                     "to cast spells from exile"):
+                     "to activate an ability of a creature you control"):     # "from exile": cx_mana_zone (#768)
             with self.subTest(text=text):
                 self.assertIsNone(M.parse(text))
 
