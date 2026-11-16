@@ -242,6 +242,9 @@ def _face_mode_and_ward_lines(st, line):
         if m:
             extra["ward_life"] = int(m[1])
             return None
+        from .. import ward_costs as _ward_costs
+        if _ward_costs.parse_line(line, st):            # "Ward—Sacrifice a creature." (#646)
+            return None
         if re.fullmatch(r"Ward—Discard a card\.", line):
             extra["ward_discard"] = True
             return None
@@ -744,6 +747,9 @@ def _face_cost_and_static_lines(st, line):
         if m:
             extra["cost_reduction"] = "affinity:" + m[1]
             return None
+        if line == "Affinity for Equipment":        # its own plural (CR 702.41a, #646)
+            extra["cost_reduction"] = "affinity:Equipment"
+            return None
         if re.fullmatch(r"You may play an additional land on each of your turns\.", line):
             extra["extra_lands"] = 1
             return None
@@ -1095,6 +1101,9 @@ def _face_keyword_ability_lines(st, line):
             return None
         from .. import champion as _champion
         if _champion.parse_line(line, st):      # "Champion an Elf" (#646)
+            return None
+        from .. import keyword_costs as _keyword_costs
+        if _keyword_costs.parse_line(line, st):         # "Echo—Discard a card.", "Buyback—Pay 4 life." (#646)
             return None
         from .. import evoke_costs as _evoke_costs
         if _evoke_costs.parse_line(line, st):           # "Evoke—Exile a white card from your hand." (#646)

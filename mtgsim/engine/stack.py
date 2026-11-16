@@ -407,6 +407,10 @@ class StackMixin:
                     self.queue_trigger(tgt.controller, [Effect("counter", 1, target="spell",
                                                                data={"life": tgt.card.ward_life})], tgt,
                                        f"{tgt.card.name} ward", targets=[item])
+                elif tgt.card.advanced_rules.get("ward_cost"):      # "Ward—Sacrifice a creature." (#646)
+                    self.queue_trigger(tgt.controller, [Effect("counter", 1, target="spell", data={
+                        "ward_cost": tgt.card.advanced_rules["ward_cost"], "warded": tgt})], tgt,
+                                       f"{tgt.card.name} ward", targets=[item])
                 elif tgt.card.ward_discard:
                     self.queue_trigger(tgt.controller, [Effect("counter", 1, target="spell",
                                                                data={"discard": True})], tgt,
