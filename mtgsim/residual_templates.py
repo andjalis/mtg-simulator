@@ -412,7 +412,9 @@ def effect_value(game, player, effect, target):
             if op == 'exchange':
                 gain += (v.life - player.life) if v is not player else 0
                 continue
-            new = v.life * 2 if op == 'double' else effect.amount
+            lives = [pl.life for pl in game.players]
+            new = (v.life * 2 if op == 'double' else min(lives) if op == 'lowest' else max(lives) if op == 'highest'
+                   else effect.amount)
             gain += (new - v.life) if v is player else (v.life - new)
         return gain / 2
     if effect.kind in ('give_control_choice', 'give_control_all'):     # giving permanents away is a cost
