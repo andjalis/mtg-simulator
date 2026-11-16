@@ -230,7 +230,16 @@ class AnotherPump(Dimir):
         self.assertEqual(fox.unsupported, [])
         bear = Permanent(BEAR2, self.a)
         self.a.battlefield.append(bear)
-        self.game.resolve(self.a, fox.triggers[0].effects[0], bear)
+        src = Permanent(fox, self.a)
+        self.a.battlefield.append(src)
+        # #809: "another" now excludes the Fox itself, so the trigger reads as a pump plus a haste grant on that same
+        # creature ("prev"); resolve the whole trigger rather than its first effect alone
+        effects = fox.triggers[0].effects
+        with self.game.targeting(src):
+            self.assertNotIn(src, self.game.legal_targets(self.a, effects[0]))
+        from mtgsim.engine import StackItem
+        self.game.stack.append(StackItem(self.a, list(effects), [bear] + [None] * (len(effects) - 1), source=src))
+        self.game.resolve_top()
         self.assertEqual(bear.power, 3)
         self.assertTrue(bear.has("haste"))
 

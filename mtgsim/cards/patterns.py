@@ -61,6 +61,15 @@ def _distinct_cant_block():
     return Effect("cant_block_turn", target="creature", data={"distinct": True})
 
 
+def _upto(effects, first_required=False):
+    """"Up to N target ..." (#845): every slot may stay empty, so 0..N targets are legal; "one or two target ..."
+    keeps the first slot required."""
+    for i, e in enumerate(effects):
+        if not (first_required and i == 0):
+            e.data = dict(e.data, optional_target=True)
+    return effects
+
+
 _TENS = {"a": 1, "one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8, "nine": 9, "ten": 10}
 
 
@@ -209,9 +218,9 @@ _EFFECT_PATTERNS = wordings.patterns("core") + [
      lambda m: Effect("oring", target="nonland_perm", filter="opp_tapped_creature" if m[1].startswith("tapped")
                       else "opp_artifact_creature")),
     (r"return up to two target creatures to their owners' hands",
-     lambda m: [_distinct_bounce(), _distinct_bounce()]),
+     lambda m: _upto([_distinct_bounce(), _distinct_bounce()])),
     (r"one or two target creatures each get \+(\d+)/\+(\d+) until end of turn",
-     lambda m: [_distinct_pump(m), _distinct_pump(m)]),
+     lambda m: _upto([_distinct_pump(m), _distinct_pump(m)], first_required=True)),
     (r"airbend (?:up to one )?(?:another |other )?target (?:(nonland permanent)|creature( you control)?)(?: or spell)?",
      lambda m: Effect("airbend", target="nonland_perm" if m[1] else "creature_mine" if m[2] else "creature")),
     (r"destroy target creature with total power and toughness (\d+) or less",
@@ -227,8 +236,9 @@ _EFFECT_PATTERNS = wordings.patterns("core") + [
     (r"target creature gets \+(\d+)/-(\d+) until end of turn",
      lambda m: Effect("debuff_one", -int(m[1]), int(m[2]), target="creature")),
     (r"(up to (?:one|two|three)|one or two|up to two) target creatures can't block this turn",
-     lambda m: [_distinct_cant_block() for _ in range({"one": 1, "two": 2, "three": 3, "one or two": 2}.get(
-         m[1].split()[-1] if m[1].startswith("up to") else m[1], 2))]),
+     lambda m: _upto([_distinct_cant_block() for _ in range({"one": 1, "two": 2, "three": 3, "one or two": 2}.get(
+         m[1].lower().split()[-1] if m[1].lower().startswith("up to") else m[1].lower(), 2))],
+         first_required=not m[1].lower().startswith("up to"))),
     (r"(?:it|~) must be blocked (?:this turn|each combat this turn) if able",
      lambda m: Effect("force_blocked", target="prev" if m[0].lower().startswith("it") else "self")),
     (r"counter target spell with mana value (\d+) or (greater|less)",
@@ -335,8 +345,8 @@ _EFFECT_PATTERNS = wordings.patterns("core") + [
     (r"attacking creatures (?:you control )?get \+(\d+)/\+(\d+) until end of turn",
      lambda m: Effect("pump_attackers", int(m[1]), int(m[2]))),
     (r"up to (two|three) target creatures each get \+(\d+)/\+(\d+) until end of turn",
-     lambda m: [Effect("pump", int(m[2]), int(m[3]), target="creature_mine", data={"distinct": True})
-                for _ in range(_num(m[1]))]),
+     lambda m: _upto([Effect("pump", int(m[2]), int(m[3]), target="creature_mine", data={"distinct": True})
+                      for _ in range(_num(m[1]))])),
     # "sacrifice ~ unless you pay {E}{E}" (Lathnu Hellion): pay the counters when there are
     # enough, sacrifice otherwise — the pay_energy gate plus a !paid sacrifice.
     (r"sacrifice (?:~|it) unless you pay ((?:\{E\})+)",
