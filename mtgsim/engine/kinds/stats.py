@@ -76,7 +76,14 @@ def monstrosity(game, p, eff, item, **_):
     if isinstance(src, Permanent) and src in p.battlefield and not getattr(src, "monstrous", False):
         src.counters["+1/+1"] = src.p1 + eff.amount
         src.monstrous = True
+        src.monstrous_x = eff.amount        # "when ~ becomes monstrous, ... X ..." is this X (701.37c)
         game.fire(p, "monstrous", src)
+        if eff.amount and game.pending:     # its "when ~ becomes monstrous" triggers read X (Hydra Broodmaster)
+            n = len(game.stack)
+            game.flush_triggers()
+            for it in game.stack[n:]:
+                if it.source is src and not getattr(it, "x", 0):
+                    it.x = eff.amount
 
 
 @kind("self_damage")

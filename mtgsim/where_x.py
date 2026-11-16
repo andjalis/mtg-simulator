@@ -21,7 +21,12 @@ def carry(effects) -> None:
     for i, e in enumerate(effects):
         if "xq_size" in e.data and isinstance(e.data.get("xq"), tuple):
             spec = e.data["xq"]
-            last = spec if spec and spec[0] in _OWN else None
+            last = spec if spec and (spec[0] in _OWN or spec == ("gained",)) else None
+        elif last is not None and e.data.get("x_size") and not e.data.get("xq"):
+            # "pay X life, where X is the life you gained this turn. If you do, create an X/X ... token" (Tivash, #865)
+            data = {k: v for k, v in e.data.items() if k != "x_size"}
+            data.update(xq=last, xq_size=True)
+            effects[i] = dataclasses.replace(e, data=data)
         elif last is not None and e.data.get("x") is True and not e.data.get("xq"):
             data = {k: v for k, v in e.data.items() if k != "x"}
             data.update(xq=last, xq_size=False)

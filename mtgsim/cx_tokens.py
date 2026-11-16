@@ -184,11 +184,15 @@ def describe(desc: str):
     if ("creature" in types) != bool(m[2]) and not (m[2] and "Vehicle" in subtypes) and not cda:
         return None
     power = toughness = "*" if cda else None
-    if m[2]:
+    x_size = bool(m[2]) and m[2] == m[3] == "X" and "creature" in types      # "an X/X ... creature token" (#865)
+    if m[2] and not x_size:
         if not (m[2].isdigit() and m[3].isdigit()):
             if not (m[2] == m[3] == "*" and lines):          # "*/*" with a defining ability in quotes
                 return None
         power, toughness = m[2], m[3]
+    elif x_size:
+        power = toughness = "0"             # sized when it resolves: the X paid, or the "where X is" quantity
+        state_out["x_size"] = True
     if "~" in name:
         return None
     card_name = name or " ".join(subtypes) + " token"
@@ -318,7 +322,9 @@ def parse_create(subject: str, body: str):
         if c is None:
             return NO_MATCH
         count = c[1].lower()
-        if (count == "x") != (amount_q is not None and not per_each) or (amount_q is not None and len(parts) > 1):
+        sized = re.match(r"(?:tapped )?X/X ", c[2]) is not None       # the quantity sizes the token, not the count
+        if (count == "x") != (amount_q is not None and not per_each and not sized) or \
+                (amount_q is not None and len(parts) > 1) or sized and count == "x":
             return NO_MATCH
         if count in ("a", "an") and re.search(r"\btokens\b", c[2]) or \
                 count not in ("a", "an", "one") and amount_q is None and not re.search(r"\btokens\b", c[2]):
@@ -328,6 +334,13 @@ def parse_create(subject: str, body: str):
             return NO_MATCH
         n = 1 if count == "x" else int(count) if count.isdigit() else _NUMBERS[count]
         data = dict(spec, who=who)
+        if spec.get("x_size") and amount_q is not None:
+            if amount_q in (_THAT_MANY, _OPPONENTS) or amount_q[0] == "devotion" or per_each:
+                return NO_MATCH
+            data.update(xq=amount_q, xq_size=True)      # "an X/X ... token, where X is <q>": the size, not the count
+            data.pop("x_size")
+            effects.append(Effect("cx_token", n, target=_TARGETS.get(who, "none"), data=data))
+            continue
         if amount_q is _THAT_MANY:          # the amount comes from the event, baked in when the trigger queues
             data["that_much"] = True
         elif amount_q == _OPPONENTS:

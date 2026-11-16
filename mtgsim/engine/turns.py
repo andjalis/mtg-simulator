@@ -244,13 +244,25 @@ class TurnsMixin:
                     continue
             elif not (card.cmc > lands + 2 or len(p.hand) > 7):
                 continue
-            if self.pay(p, spec["cost"]) is None:
+            cost, x = spec["cost"], 0
+            if cost.get("X"):                   # "Cycling {X}{1}{U}": the largest X we can pay (#865)
+                from . import payable
+                base = {k: v for k, v in cost.items() if k != "X"}
+                x = next((n for n in range(len(self.mana_sources(p)), -1, -1)
+                          if payable(self.mana_sources(p), dict(base, generic=base.get("generic", 0) + n))), 0)
+                cost = dict(base, generic=base.get("generic", 0) + x)
+            if self.pay(p, cost) is None:
                 continue
             self.discard_card(p, card)
-            self.log(f"cycles {card.name}", p)
+            self.log(f"cycles {card.name}" + (f" (X={x})" if x else ""), p)
             self.fire(p, "you_cycle")
             for trig in card.cycle_self_triggers:
                 self.queue_trigger(p, trig.effects, None, f"{card.name}: cycled")
+            if x and card.cycle_self_triggers:
+                self.flush_triggers()           # "when you cycle this card, ... X ...": the X paid
+                for item in self.stack:
+                    if item.name == f"{card.name}: cycled":
+                        item.x = x
             if spec["land"] or spec.get("type"):
                 want = spec["land"]
                 if spec.get("type"):            # "Wizardcycling": any card with that subtype (CR 702.29e)
