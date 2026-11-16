@@ -41,6 +41,11 @@ def _atoms(phrase: str):
     out = []
     for word in re.split(r",? (?:and/or|or|and) |, ", phrase):
         w = _singular(word.strip())
+        pair = re.fullmatch(r"([a-z]+) creature", w)
+        if pair and pair[1] not in _TYPES and pair[1] not in _COLOR_LETTER and not pair[1].startswith("non") and \
+                pair[1] not in ("legendary", "multicolored", "monocolored", "colorless", "colored", "token"):
+            out.append("sc:" + pair[1])        # "an Elf creature spell": that subtype and a creature (#644)
+            continue
         if not w or " " in w:
             return None
         if w == "legendary":
@@ -60,8 +65,20 @@ def _atoms(phrase: str):
     return out or None
 
 
+def _normal(text: str) -> str:
+    """The singular and reversed wordings as the plural one (#644): "to activate an ability [of an artifact source]" →
+    "activate abilities [of artifact sources]"; "to activate an ability or cast X" → "to cast X or activate
+    abilities"; "or to activate" → "or activate"."""
+    text = re.sub(r"\b(?:to )?activate an ability of (?:an? )?(\w+?)(?: sources?)?$", r"activate abilities of \1", text)
+    text = re.sub(r"\b(?:to )?activate an ability\b", "activate abilities", text)
+    m = re.fullmatch(r"(?:to )?activate abilities(?: of (\w+))? or cast (.+)", text)
+    if m:
+        text = f"to cast {m[2]} or activate abilities" + (f" of {m[1]}" if m[1] else "")
+    return re.sub(r"\b(or|and) to activate\b", r"\1 activate", text)
+
+
 def parse(text: str):
-    text = text.strip().lower()
+    text = _normal(text.strip().lower())
     cast = acts = None
     m = re.fullmatch(r"(?:to cast (.+?))?(?:,? (?:or|and) )?(?:(?:to )?activate (?:abilities|equip abilities)"
                      r"(?: of (.+))?)?", text)
@@ -99,6 +116,8 @@ def _match(atoms, card, perm=None) -> bool:
         if kind == "n" and not (creature if v == "creature" else v.capitalize() in types):
             return True
         if kind == "s" and v in subtypes:
+            return True
+        if kind == "sc" and v in subtypes and creature:
             return True
         if kind == "c" and v in card.colors:
             return True
