@@ -19,6 +19,26 @@ class _FaceState:
         self.__dict__.update(values)
 
 
+def finish_tier(st):
+    """After a face's last line: close an "N+ | ..." Station tier the way the next line would (#743): gate its
+    triggers and activations on the charge counters, and record what the gate can't cover (a static) as an
+    approximation. Without this a tier on the card's last line applied at any charge."""
+    tier = getattr(st, "tier", None)
+    if tier is not None:
+        _close_tier(st, tier)
+    st.tier = None
+
+
+def _close_tier(st, tier):
+    for t in st.triggers[tier[1]:]:       # the tier is met when the ability triggers; not rechecked on resolution
+        t.data["trigger_gate"] = f"charge>={tier[0]}"
+    for a in st.activated[tier[2]:]:
+        a.min_charge = max(a.min_charge, tier[0])
+    public = lambda d: {k: v for k, v in d.items() if not k.startswith("_")}      # noqa: E731  not parse scratch keys
+    if public(st.extra) != public(tier[3]):      # a static or other line the gate can't cover: not fully played
+        st.approximations.append(f"tier {tier[0]}+ effect applies without needing {tier[0]} charge counters")
+
+
 def _face_special_lines(st, line):
     """Speed gates, graveyard abilities, one-off statics, kicker and ability-word prefixes, keyword lines. Returns the line to keep parsing, or None once it is handled."""
     activated = st.activated
@@ -36,12 +56,7 @@ def _face_special_lines(st, line):
             gate = None
         tier = getattr(st, "tier", None)
         if tier is not None:      # what the lines under an "N+ | ..." Station tier added is gated on its charge counters
-            for t in triggers[tier[1]:]:       # the tier is met when the ability triggers; not rechecked on resolution
-                t.data["trigger_gate"] = f"charge>={tier[0]}"
-            for a in activated[tier[2]:]:
-                a.min_charge = max(a.min_charge, tier[0])
-            if extra != tier[3]:      # a static or other line the gate can't cover: don't count it as fully played
-                approximations.append(f"tier {tier[0]}+ effect applies without needing {tier[0]} charge counters")
+            _close_tier(st, tier)
             st.tier = (tier[0], len(triggers), len(activated), dict(extra))
         if not line:
             st.tier = None
@@ -49,7 +64,8 @@ def _face_special_lines(st, line):
         tm = re.fullmatch(r"(\d+)\+ \| (.*)", line)
         if tm and extra.get("station"):
             kws = [k.strip().lower() for k in re.split(r",| and ", tm[2])]
-            if kws and all(k in KEYWORDS for k in kws) or re.match(r"(When|Whenever|At the beginning)\b", tm[2]):
+            if kws and all(k in KEYWORDS for k in kws) or \
+                    re.match(r"(?:[A-Z][^—|]* — )?(When|Whenever|At the beginning)\b", tm[2]):     # an ability word too (#743)
                 rules = extra.setdefault("advanced_rules", {})
                 if rules.get("station_creature") not in (None, int(tm[1])):
                     approximations.append("Spacecraft become creatures at the highest station tier (P/T box tier assumed)")
