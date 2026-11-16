@@ -97,14 +97,18 @@ def _pay(game, payer, cost, item, eff=None) -> bool:
         for x in chosen:
             game.sacrifice(x)
         return True
-    if any(key in cost for key in ("bounce", "tap", "remove_counter", "exile_gy", "damage")):
+    if any(key in cost for key in ("bounce", "tap", "remove_counter", "exile_gy", "damage", "regrow", "gy_bottom",
+                                   "bounce_any", "remove_any_counter")):
         return _pay_counted(game, payer, cost, item)
     if "discard" in cost:
         cards = [c for c in payer.hand if _card_ok(c, cost["discard"])]
-        if not cards:
+        n = cost.get("count", 1)
+        if len(cards) < n:              # a counted discard needs every card: no partial payment
             return False
-        choice = payer.ai.choose_discard(game, payer)
-        game.discard_card(payer, choice if choice in cards else cards[0])
+        for _ in range(n):
+            cards = [c for c in payer.hand if _card_ok(c, cost["discard"])]
+            choice = payer.ai.choose_discard(game, payer)
+            game.discard_card(payer, choice if choice in cards else cards[0])
         return True
     mana = cost["mana"]
     if cost.get("per") is not None:         # "{1} for each card in your hand": counted now, from the source's side
@@ -152,11 +156,43 @@ def _pay_counted(game, payer, cost, item) -> bool:
         source.counters[kind_] -= n
         game.log(f"removes {n} {kind_} counter(s) from {source.card.name}", payer)
         return True
+    if "regrow" in cost or "gy_bottom" in cost:
+        cards = [c for c in payer.graveyard if _card_ok(c, cost.get("regrow") or {})]
+        if not cards:
+            return False
+        if "regrow" in cost:            # the best one comes back to hand
+            card = max(cards, key=lambda c: c.cmc)
+            game.move_card(card, payer.graveyard, payer.hand, reason="cost")
+            game.log(f"returns {card.name} from their graveyard to their hand", payer)
+        else:                           # the least useful one goes to the bottom
+            card = min(cards, key=lambda c: (not c.is_land, c.cmc))
+            payer.graveyard.remove(card)
+            payer.library.insert(0, card)
+            game.log(f"puts {card.name} from their graveyard on the bottom of their library", payer)
+        return True
+    if "bounce_any" in cost:            # an opponent's first, else the payer's cheapest
+        pool = [x for pl in game.players for x in pl.battlefield if _card_ok(x.card, cost["bounce_any"], x)
+                and x is not source]
+        if not pool:
+            return False
+        x = max(pool, key=lambda x: (x.controller is not payer, perm_value(x) if x.controller is not payer
+                                     else -perm_value(x)))
+        game.leave_battlefield(x, "hand")
+        game.log(f"returns {x.card.name} to its owner's hand", payer)
+        return True
+    if "remove_any_counter" in cost:    # a counter whose loss costs least: not the source's own first
+        pool = [(x, k) for x in payer.battlefield for k, v in x.counters.items() if v > 0]
+        if not pool:
+            return False
+        x, k = min(pool, key=lambda xk: (xk[1] != "-1/-1", xk[1] in ("+1/+1", "loyalty"), xk[0] is source))
+        x.counters[k] -= 1
+        game.log(f"removes a {k} counter from {x.card.name}", payer)
+        return True
     if "exile_gy" in cost:
         cards = [c for c in payer.graveyard if _card_ok(c, cost["exile_gy"])]
         if not cards:
             return False
-        card = min(cards, key=lambda c: c.cmc)
+        card = cards[-1] if cost.get("top") else min(cards, key=lambda c: c.cmc)    # the top card is the last
         payer.graveyard.remove(card)
         payer.exile.append(card)
         game.log(f"exiles {card.name} from their graveyard", payer)

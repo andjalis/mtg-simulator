@@ -24,10 +24,10 @@ class Parsing(unittest.TestCase):
         self.assertEqual(_costs("has ~ deal 6 damage to them"), [{"damage": 6}])
 
     def test_refusals(self):
-        for text in ("return an enchantment to its owner's hand",            # anyone's: not "you control"
+        for text in ("return an enchantment you don't control to its owner's hand",
                      "tap an untapped creature you control not declared as an attacking creature",
-                     "remove a counter from a permanent you control",          # another object
-                     "exile the top creature card of your graveyard",
+                     "remove a counter from a permanent an opponent controls",
+                     "exile the top two cards of your graveyard",
                      "has ~ deal damage to them equal to its power"):
             self.assertIsNone(_costs(text), text)
 

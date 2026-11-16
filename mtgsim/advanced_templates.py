@@ -42,6 +42,9 @@ def parse_line(line, state):
         match = ('activation_discount', int(m[1]))
     if line == 'During each of your turns, you may cast an instant or sorcery spell from your graveyard. If a spell cast this way would be put into your graveyard, exile it instead.':
         match = ('grave_cast', True)
+    m = re.fullmatch(r"Equip abilities you activate cost \{(\d+)\} less to activate\.", line)
+    if m:
+        match = ('equip_discount', int(m[1]))
     if match:
         state.extra.setdefault('advanced_rules', {})[match[0]] = match[1]
         return True

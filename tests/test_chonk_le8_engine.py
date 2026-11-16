@@ -201,7 +201,7 @@ class CardMatchesVocabulary(unittest.TestCase):
 
     def test_outlaw(self):
         self.assertTrue(card_matches(self.OUTLAW, "an outlaw you control"))
-        self.assertTrue(card_matches(self.WIZARD, "an outlaw you control"))
+        self.assertFalse(card_matches(self.WIZARD, "an outlaw you control"))     # rule 700.12: Wizards are not outlaws (#321)
         self.assertFalse(card_matches(self.NOT_OUTLAW, "an outlaw you control"))
 
     def test_snow(self):
