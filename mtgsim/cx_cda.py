@@ -51,6 +51,10 @@ def parse_line(line: str, st) -> bool:
     m = _LINE.fullmatch(line)
     if m is None or m[3].startswith("in the hand"):
         return False
+    # The lazy noun match can swallow a second clause ("Elves you control plus the number of Elf cards"): those go
+    # to the general quantity reader (late_line) instead of a garbled count that evaluates to 0 (#784).
+    if re.search(r"\b(?:plus|minus|number|control|controls|battlefield|graveyards?|among|watermark)\b", m[2]):
+        return False
     what = re.sub(r"\bcards?\b", "", m[2]).strip().replace(" and ", " or ")
     what = " ".join(w[:-1] if w.endswith("s") and not w.endswith("ss") and w != "or" else w for w in what.split())
     if not what or " plus " in what or "chosen" in what:
