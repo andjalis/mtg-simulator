@@ -186,6 +186,11 @@ def resolve(game, p, eff, target, item):
     k = eff.kind
     if k in ("echo", "pay_or_sac", "cumulative_upkeep"):
         if isinstance(src, Permanent) and src in p.battlefield:
+            if k == "echo" and src.card.advanced_rules.get("echo_cost"):     # "Echo—Discard a card." (#646)
+                from .keyword_costs import pay_echo
+                if not pay_echo(game, p, src):
+                    game.sacrifice(src)
+                return
             if k == "echo":
                 cost = src.card.echo
             elif k == "pay_or_sac":

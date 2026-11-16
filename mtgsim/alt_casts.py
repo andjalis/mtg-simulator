@@ -94,7 +94,8 @@ def variants(game, p, card) -> list:
     out = []
     for a in card.alt_costs:
         if a.kind == "buyback":
-            out.append(game._variant(card, "buyback", AltCost("buyback", add_mana(card.mana_cost, a.cost))))
+            out.append(game._variant(card, "buyback", AltCost("buyback", add_mana(card.mana_cost, a.cost),
+                                                              life=a.life)))     # "Buyback—Pay 4 life." (#646)
         elif a.kind == "surge" and game.spells_cast_turn(p) >= 1:
             out.append(game._variant(card, "surge", a))
         elif a.kind == "prototype":
