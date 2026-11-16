@@ -1,0 +1,32 @@
+{
+ "name": "Bellowing Elk",
+ "oracle_sha1": "3c38065140b1",
+ "covers": [
+  "As long as you had another creature enter the battlefield under your control this turn, ~ has trample and indestructible."
+ ],
+ "patches": [
+  {
+   "face": "front",
+   "set": {
+    "cond_keywords": {
+     "$t": [
+      {
+       "$t": [
+        "trample",
+        "lib:[\"or\",\"lib:[\\\"and\\\",\\\"lib:[\\\\\\\"not\\\\\\\",\\\\\\\"lib:[\\\\\\\\\\\\\\\"src_entered\\\\\\\\\\\\\\\"]\\\\\\\"]\\\",\\\"lib:[\\\\\\\"hist\\\\\\\",\\\\\\\"a creature you control enters\\\\\\\",1]\\\"]\",\"lib:[\\\"hist\\\",\\\"a creature you control enters\\\",2]\"]"
+       ]
+      },
+      {
+       "$t": [
+        "indestructible",
+        "lib:[\"or\",\"lib:[\\\"and\\\",\\\"lib:[\\\\\\\"not\\\\\\\",\\\\\\\"lib:[\\\\\\\\\\\\\\\"src_entered\\\\\\\\\\\\\\\"]\\\\\\\"]\\\",\\\"lib:[\\\\\\\"hist\\\\\\\",\\\\\\\"a creature you control enters\\\\\\\",1]\\\"]\",\"lib:[\\\"hist\\\",\\\"a creature you control enters\\\",2]\"]"
+       ]
+      }
+     ]
+    }
+   }
+  }
+ ],
+ "verify": "tests/translated/test_cards.py::bellowing_elk",
+ "notes": "'another creature': one entry if the Elk itself didn't enter this turn, else two."
+}

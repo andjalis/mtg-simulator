@@ -1,0 +1,33 @@
+{
+ "name": "Adamaro, First to Desire",
+ "oracle_sha1": "c39d59d92f52",
+ "covers": [
+  "~'s power and toughness are each equal to the number of cards in the hand of the opponent with the most cards in hand."
+ ],
+ "patches": [
+  {
+   "face": "front",
+   "set": {
+    "advanced_rules": {
+     "cda_q": {
+      "$t": [
+       {
+        "$t": [
+         "opp_hand"
+        ]
+       },
+       {
+        "$t": [
+         1,
+         1
+        ]
+       }
+      ]
+     }
+    }
+   }
+  }
+ ],
+ "verify": "tests/translated/test_cards.py::adamaro_first_to_desire",
+ "notes": "Two players: the opponent with the most cards is the opponent."
+}

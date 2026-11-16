@@ -1,0 +1,27 @@
+{
+ "name": "Clawing Torment",
+ "oracle_sha1": "51840ac71419",
+ "covers": [
+  "As long as enchanted permanent is a creature, it gets -1/-1 and can't block."
+ ],
+ "patches": [
+  {
+   "face": "front",
+   "set": {
+    "equip_bonus": {
+     "$t": [
+      -1,
+      -1
+     ]
+    },
+    "equip_keywords": {
+     "$fs": [
+      "cant_block_now"
+     ]
+    }
+   }
+  }
+ ],
+ "verify": "tests/translated/test_cards.py::clawing_torment",
+ "notes": "Host bonus -1/-1 and cant_block_now; on a noncreature artifact host both have no effect, matching 'as long as it is a creature'."
+}

@@ -1,0 +1,33 @@
+Adamaro, First to Desire	mtgsim/data/translated/adamaro_first_to_desire.json	tests/translated/test_cards.py::adamaro_first_to_desire	translated
+Aeon Engine	mtgsim/data/translated/aeon_engine.json	tests/translated/test_cards.py::aeon_engine	no-op
+Agent of Acquisitions	mtgsim/data/translated/agent_of_acquisitions.json	tests/translated/test_cards.py::agent_of_acquisitions	no-op
+Alistair, the Brigadier	mtgsim/data/translated/alistair_the_brigadier.json	tests/translated/test_cards.py::alistair_the_brigadier	translated
+Bellowing Elk	mtgsim/data/translated/bellowing_elk.json	tests/translated/test_cards.py::bellowing_elk	translated
+Bloodroot Apothecary	mtgsim/data/translated/bloodroot_apothecary.json	tests/translated/test_cards.py::bloodroot_apothecary	translated
+Breathkeeper Seraph	mtgsim/data/translated/breathkeeper_seraph.json	tests/translated/test_cards.py::breathkeeper_seraph	translated
+Clawing Torment	mtgsim/data/translated/clawing_torment.json	tests/translated/test_cards.py::clawing_torment	translated
+Daybreak Ranger	mtgsim/data/translated/daybreak_ranger.json	tests/translated/test_cards.py::daybreak_ranger	translated
+Death Baron	mtgsim/data/translated/death_baron.json	tests/translated/test_cards.py::death_baron	translated
+Ellie, Vengeful Hunter	mtgsim/data/translated/ellie_vengeful_hunter.json	tests/translated/test_cards.py::ellie_vengeful_hunter	translated
+Guildsworn Prowler	mtgsim/data/translated/guildsworn_prowler.json	tests/translated/test_cards.py::guildsworn_prowler	translated
+Homarid Warrior	mtgsim/data/translated/homarid_warrior.json	tests/translated/test_cards.py::homarid_warrior	translated
+Icequake	mtgsim/data/translated/icequake.json	tests/translated/test_cards.py::icequake	translated
+Keeper of the Beasts	mtgsim/data/translated/keeper_of_the_beasts.json	tests/translated/test_cards.py::keeper_of_the_beasts	translated
+Krang, Master Mind	mtgsim/data/translated/krang_master_mind.json	tests/translated/test_cards.py::krang_master_mind	translated
+Mirkwood Bats	mtgsim/data/translated/mirkwood_bats.json	tests/translated/test_cards.py::mirkwood_bats	translated
+Mistway Spy	mtgsim/data/translated/mistway_spy.json	tests/translated/test_cards.py::mistway_spy	translated
+Mr. Wiggles, Helpful Butterfly	mtgsim/data/translated/mr_wiggles_helpful_butterfly.json	tests/translated/test_cards.py::mr_wiggles_helpful_butterfly	no-op
+Nils, Discipline Enforcer	mtgsim/data/translated/nils_discipline_enforcer.json	tests/translated/test_cards.py::nils_discipline_enforcer	translated
+Oni-Cult Anvil	mtgsim/data/translated/oni_cult_anvil.json	tests/translated/test_cards.py::oni_cult_anvil	translated
+Proctor of Potential	mtgsim/data/translated/proctor_of_potential.json	tests/translated/test_cards.py::proctor_of_potential	translated
+Raving Oni-Slave	mtgsim/data/translated/raving_oni_slave.json	tests/translated/test_cards.py::raving_oni_slave	translated
+Remorseless Punishment	mtgsim/data/translated/remorseless_punishment.json	tests/translated/test_cards.py::remorseless_punishment	translated
+Return the Past	mtgsim/data/translated/return_the_past.json	tests/translated/test_cards.py::return_the_past	translated
+Swarming Goblins	mtgsim/data/translated/swarming_goblins.json	tests/translated/test_cards.py::swarming_goblins	translated
+Telekinetic Bonds	mtgsim/data/translated/telekinetic_bonds.json	tests/translated/test_cards.py::telekinetic_bonds	translated
+The Raven Man	mtgsim/data/translated/the_raven_man.json	tests/translated/test_cards.py::the_raven_man	translated
+The Unbeatable Squirrel Girl	mtgsim/data/translated/the_unbeatable_squirrel_girl.json	tests/translated/test_cards.py::the_unbeatable_squirrel_girl	translated
+Thunder Salvo	mtgsim/data/translated/thunder_salvo.json	tests/translated/test_cards.py::thunder_salvo	translated
+Transmogrant's Crown	mtgsim/data/translated/transmogrant_s_crown.json	tests/translated/test_cards.py::transmogrant_s_crown	translated
+Unstable Molecule Suit	mtgsim/data/translated/unstable_molecule_suit.json	tests/translated/test_cards.py::unstable_molecule_suit	no-op
+Voice of Many	mtgsim/data/translated/voice_of_many.json	tests/translated/test_cards.py::voice_of_many	translated

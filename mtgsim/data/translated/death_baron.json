@@ -1,0 +1,61 @@
+{
+ "name": "Death Baron",
+ "oracle_sha1": "62238c0863c6",
+ "covers": [
+  "Skeletons you control and other Zombies you control get +1/+1 and have deathtouch."
+ ],
+ "patches": [
+  {
+   "face": "front",
+   "set": {
+    "static_keyword_grants": {
+     "$t": [
+      {
+       "$t": [
+        {
+         "controller": "mine",
+         "subtypes_any": [
+          "skeleton",
+          "zombie"
+         ],
+         "types_any": [
+          "creature"
+         ],
+         "other": true
+        },
+        {
+         "$t": [
+          "deathtouch"
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    "advanced_rules": {
+     "anthems": [
+      {
+       "$t": [
+        {
+         "controller": "mine",
+         "subtypes_any": [
+          "skeleton",
+          "zombie"
+         ],
+         "types_any": [
+          "creature"
+         ],
+         "other": true
+        },
+        1,
+        1
+       ]
+      }
+     ]
+    }
+   }
+  }
+ ],
+ "verify": "tests/translated/test_cards.py::death_baron",
+ "notes": "One union selector (Skeleton or Zombie, other). Deviation: if Death Baron itself became a Skeleton it would not buff itself (Oracle: it would)."
+}

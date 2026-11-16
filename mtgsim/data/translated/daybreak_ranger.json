@@ -1,0 +1,37 @@
+{
+ "name": "Daybreak Ranger",
+ "oracle_sha1": "d43a11b9a887",
+ "covers": [
+  "Nightfall Predator: {R}, {T}: ~ fights target creature."
+ ],
+ "patches": [
+  {
+   "face": "back",
+   "add": {
+    "activated": [
+     {
+      "$dc": "mtgsim.cards.model:Activated",
+      "kind": "ability",
+      "cost": {
+       "generic": 0,
+       "R": 1
+      },
+      "effects": [
+       {
+        "$dc": "mtgsim.cards.model:Effect",
+        "kind": "fight",
+        "target": "creature"
+       }
+      ],
+      "extra_costs": {
+       "tap": true
+      },
+      "text": "{R}, {T}: ~ fights target creature."
+     }
+    ]
+   }
+  }
+ ],
+ "verify": "tests/translated/test_cards.py::daybreak_ranger",
+ "notes": "Back face: fight with any target creature (no filter)."
+}

@@ -1,0 +1,30 @@
+{
+ "name": "Aeon Engine",
+ "oracle_sha1": "f5bda05e255b",
+ "covers": [
+  "{T}, Exile ~: Reverse the game's turn order."
+ ],
+ "patches": [
+  {
+   "face": "front",
+   "add": {
+    "activated": [
+     {
+      "$dc": "mtgsim.cards.model:Activated",
+      "kind": "ability",
+      "cost": {
+       "generic": 0
+      },
+      "extra_costs": {
+       "tap": true,
+       "exile_self": true
+      },
+      "text": "{T}, Exile ~: Reverse the game's turn order."
+     }
+    ]
+   }
+  }
+ ],
+ "verify": "tests/translated/test_cards.py::aeon_engine",
+ "notes": "NO-OP: reversing the turn order changes nothing with two players."
+}

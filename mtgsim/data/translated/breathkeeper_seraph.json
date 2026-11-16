@@ -1,0 +1,25 @@
+{
+ "name": "Breathkeeper Seraph",
+ "oracle_sha1": "8a2febac5a88",
+ "covers": [
+  "Flying, soulbond"
+ ],
+ "patches": [
+  {
+   "face": "front",
+   "set": {
+    "keywords": {
+     "$fs": [
+      "flying"
+     ]
+    },
+    "advanced_rules": {
+     "trigger_grants": true,
+     "soulbond": {}
+    }
+   }
+  }
+ ],
+ "verify": "tests/translated/test_cards.py::breathkeeper_seraph",
+ "notes": "The combined keyword line 'Flying, soulbond': flying plus the soulbond marker (paired grant already parsed). Corrected from needs-engine after opus-discovery's review."
+}

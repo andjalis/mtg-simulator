@@ -1,0 +1,96 @@
+{
+ "name": "Alistair, the Brigadier",
+ "oracle_sha1": "affddaf604bd",
+ "covers": [
+  "If you do, creatures you control get +X/+X until end of turn, where X is the number of historic permanents you control."
+ ],
+ "patches": [
+  {
+   "face": "front",
+   "set": {
+    "triggers": [
+     {
+      "$dc": "mtgsim.cards.model:Trigger",
+      "event": "cast_spell",
+      "effects": [
+       {
+        "$dc": "mtgsim.cards.model:Effect",
+        "kind": "token",
+        "amount": 1,
+        "data": {
+         "name": "Soldier",
+         "power": 1,
+         "toughness": 1,
+         "keywords": {
+          "$fs": []
+         },
+         "attacking": false,
+         "triggers": [],
+         "artifact": false,
+         "pt_per": "",
+         "colors": {
+          "$fs": [
+           "W"
+          ]
+         }
+        }
+       }
+      ],
+      "filter": "spell:historic"
+     },
+     {
+      "$dc": "mtgsim.cards.model:Trigger",
+      "event": "attacks",
+      "effects": [
+       {
+        "$dc": "mtgsim.cards.model:Effect",
+        "kind": "pay_gate",
+        "data": {
+         "cost": {
+          "generic": 8
+         }
+        }
+       },
+       {
+        "$dc": "mtgsim.cards.model:Effect",
+        "kind": "cx_group",
+        "cond": "paid",
+        "data": {
+         "group": {
+          "selector": {
+           "controller": "mine",
+           "types_all": [
+            "creature"
+           ]
+          }
+         },
+         "effects": [
+          {
+           "$dc": "mtgsim.cards.model:Effect",
+           "kind": "pump",
+           "amount": 1,
+           "amount2": 1,
+           "target": "self"
+          }
+         ],
+         "xq": {
+          "$t": [
+           "cxq",
+           "perms",
+           {
+            "cx_desc": "historic permanents you control",
+            "plural": true
+           }
+          ]
+         }
+        }
+       }
+      ]
+     }
+    ]
+   }
+  }
+ ],
+ "verify": "tests/translated/test_cards.py::alistair_the_brigadier",
+ "notes": "pay_gate {8} then the per-historic group pump, gated on cond 'paid'. First attempt lacked the 'paid' gate and failed test_unpaid."
+}

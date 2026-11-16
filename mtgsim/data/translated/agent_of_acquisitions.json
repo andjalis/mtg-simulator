@@ -1,0 +1,11 @@
+{
+ "name": "Agent of Acquisitions",
+ "oracle_sha1": "e22419cf280b",
+ "covers": [
+  "Draft this card face up.",
+  "Instead of drafting a card from a booster pack, you may draft each card in that booster pack, one at a time. If you do, turn this card face down and you can't draft cards for the rest of this draft round."
+ ],
+ "patches": [],
+ "verify": "tests/translated/test_cards.py::agent_of_acquisitions",
+ "notes": "NO-OP: draft-only text."
+}

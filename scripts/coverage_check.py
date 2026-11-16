@@ -39,7 +39,7 @@ def _cache_dir() -> Path:
 
 
 CACHE = _cache_dir()
-STATUSES = ("full", "simplified", "partial", "parse_error")
+STATUSES = ("full", "full (translated)", "simplified", "partial", "parse_error")
 
 # Runs inside a worker process with PYTHONPATH=<code root>; prints "name\tstatus\tparse-hash" per card.
 WORKER = r"""

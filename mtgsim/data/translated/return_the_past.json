@@ -1,0 +1,42 @@
+{
+ "name": "Return the Past",
+ "oracle_sha1": "f8a389b87628",
+ "covers": [
+  "During your turn, each instant and sorcery card in your graveyard has flashback. Its flashback cost is equal to its mana cost."
+ ],
+ "patches": [
+  {
+   "face": "front",
+   "set": {
+    "advanced_rules": {
+     "zone_grants": {
+      "$t": [
+       {
+        "$t": [
+         "graveyard",
+         [
+          {
+           "types": [
+            "instant"
+           ]
+          },
+          {
+           "types": [
+            "sorcery"
+           ]
+          }
+         ],
+         "flashback",
+         null,
+         true
+        ]
+       }
+      ]
+     }
+    }
+   }
+  }
+ ],
+ "verify": "tests/translated/test_cards.py::return_the_past",
+ "notes": "zone_grants flashback with no cost: the card's mana cost."
+}

@@ -1,0 +1,60 @@
+{
+ "name": "Keeper of the Beasts",
+ "oracle_sha1": "63ff8bd8e88d",
+ "covers": [
+  "{G}, {T}: Choose target opponent who controls more creatures than you do as you activate this ability. Create a 2/2 green Beast creature token."
+ ],
+ "patches": [
+  {
+   "face": "front",
+   "add": {
+    "activated": [
+     {
+      "$dc": "mtgsim.cards.model:Activated",
+      "kind": "ability",
+      "cost": {
+       "generic": 0,
+       "G": 1
+      },
+      "effects": [
+       {
+        "$dc": "mtgsim.cards.model:Effect",
+        "kind": "token",
+        "amount": 1,
+        "cond": "lib:[\"ctl_vs\",{\"types\":[\"creature\"]},\"<\"]",
+        "data": {
+         "name": "Beast",
+         "power": 2,
+         "toughness": 2,
+         "keywords": {
+          "$fs": []
+         },
+         "attacking": false,
+         "triggers": [],
+         "artifact": false,
+         "pt_per": "",
+         "colors": {
+          "$fs": [
+           "G"
+          ]
+         }
+        }
+       }
+      ],
+      "extra_costs": {
+       "tap": true
+      },
+      "text": "{G}, {T}: Choose target opponent who controls more creatures than you do as you activate this ability. Create a 2/2 green Beast creature token.",
+      "restrictions": {
+       "$t": [
+        "lib:[\"ctl_vs\",{\"types\":[\"creature\"]},\"<\"]"
+       ]
+      }
+     }
+    ]
+   }
+  }
+ ],
+ "verify": "tests/translated/test_cards.py::keeper_of_the_beasts",
+ "notes": "Target-opponent condition as an activation restriction, re-checked on resolution (an illegal target would fizzle). The opponent isn't actually targeted (player hexproof not modelled)."
+}

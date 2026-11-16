@@ -1,0 +1,49 @@
+{
+ "name": "Nils, Discipline Enforcer",
+ "oracle_sha1": "eb86007681a3",
+ "covers": [
+  "for each player, put a +1/+1 counter on up to one target creature that player controls."
+ ],
+ "patches": [
+  {
+   "face": "front",
+   "add": {
+    "triggers": [
+     {
+      "$dc": "mtgsim.cards.model:Trigger",
+      "event": "end_step",
+      "effects": [
+       {
+        "$dc": "mtgsim.cards.model:Effect",
+        "kind": "p1_counters",
+        "amount": 1,
+        "target": "creature_mine",
+        "data": {
+         "optional_target": true
+        }
+       },
+       {
+        "$dc": "mtgsim.cards.model:Effect",
+        "kind": "add_counter",
+        "amount": 1,
+        "target": "permanent",
+        "data": {
+         "selector": {
+          "controller": "opp",
+          "types_all": [
+           "creature"
+          ]
+         },
+         "optional_target": true,
+         "counter": "+1/+1"
+        }
+       }
+      ]
+     }
+    ]
+   }
+  }
+ ],
+ "verify": "tests/translated/test_cards.py::nils_discipline_enforcer",
+ "notes": "For each of two players: one up-to-one target each."
+}

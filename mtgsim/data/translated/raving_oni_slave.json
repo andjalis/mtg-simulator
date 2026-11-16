@@ -1,0 +1,52 @@
+{
+ "name": "Raving Oni-Slave",
+ "oracle_sha1": "1f2018fd4407",
+ "covers": [
+  "you lose 3 life if you don't control a Demon."
+ ],
+ "patches": [
+  {
+   "face": "front",
+   "set": {
+    "etb_effects": [
+     {
+      "$dc": "mtgsim.cards.model:Effect",
+      "kind": "lose_life",
+      "amount": 3,
+      "cond": "lib:[\"not\",\"lib:[\\\"ctl\\\",\\\"you\\\",{\\\"sub\\\":[\\\"Demon\\\"]},\\\">=\\\",1]\"]"
+     }
+    ]
+   },
+   "add": {
+    "triggers": [
+     {
+      "$dc": "mtgsim.cards.model:Trigger",
+      "event": "etb",
+      "effects": [
+       {
+        "$dc": "mtgsim.cards.model:Effect",
+        "kind": "lose_life",
+        "amount": 3,
+        "cond": "lib:[\"not\",\"lib:[\\\"ctl\\\",\\\"you\\\",{\\\"sub\\\":[\\\"Demon\\\"]},\\\">=\\\",1]\"]"
+       }
+      ]
+     },
+     {
+      "$dc": "mtgsim.cards.model:Trigger",
+      "event": "leaves",
+      "effects": [
+       {
+        "$dc": "mtgsim.cards.model:Effect",
+        "kind": "lose_life",
+        "amount": 3,
+        "cond": "lib:[\"not\",\"lib:[\\\"ctl\\\",\\\"you\\\",{\\\"sub\\\":[\\\"Demon\\\"]},\\\">=\\\",1]\"]"
+       }
+      ]
+     }
+    ]
+   }
+  }
+ ],
+ "verify": "tests/translated/test_cards.py::raving_oni_slave",
+ "notes": "'you lose 3 life if you don't control a Demon': checked on resolution (no intervening if), on both triggers."
+}

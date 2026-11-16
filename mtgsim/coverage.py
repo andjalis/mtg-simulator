@@ -8,6 +8,7 @@ from .carddb import CardDB
 from .cards import CardDef
 
 FULL, SIMPLIFIED, PARTIAL, UNKNOWN = "full", "simplified", "partial", "unknown"
+TRANSLATED = "full (translated)"   # no parser gaps left because a hand translation (mtgsim.translated) replaced them
 
 
 @dataclass
@@ -33,6 +34,8 @@ def card_coverage(card: CardDef, copies: int = 1) -> CardCoverage:
         ignored += [prefix + line for line in face.unsupported]
         simplified += [prefix + line for line in face.approximations]
     status = PARTIAL if ignored else SIMPLIFIED if simplified else FULL
+    if status != PARTIAL and card.advanced_rules.get("translated"):
+        status = TRANSLATED
     return CardCoverage(card.name, copies, status, ignored, simplified)
 
 
@@ -45,13 +48,13 @@ def deck_coverage(db: CardDB, counts: dict[str, int]) -> list[CardCoverage]:
             rows.append(card_coverage(db.get(name), n))
         except KeyError:
             rows.append(CardCoverage(name, n, UNKNOWN, ["not in the card database"]))
-    order = {UNKNOWN: 0, PARTIAL: 1, SIMPLIFIED: 2, FULL: 3}
+    order = {UNKNOWN: 0, PARTIAL: 1, SIMPLIFIED: 2, TRANSLATED: 3, FULL: 4}
     return sorted(rows, key=lambda r: (order[r.status], -r.copies, r.name))
 
 
 def summary(rows: list[CardCoverage]) -> dict[str, int]:
     """Copies of cards in each status, plus the total."""
-    out = {FULL: 0, SIMPLIFIED: 0, PARTIAL: 0, UNKNOWN: 0}
+    out = {FULL: 0, TRANSLATED: 0, SIMPLIFIED: 0, PARTIAL: 0, UNKNOWN: 0}
     for r in rows:
         out[r.status] += r.copies
     out["total"] = sum(r.copies for r in rows)
@@ -60,14 +63,14 @@ def summary(rows: list[CardCoverage]) -> dict[str, int]:
 
 def format_coverage(deck: str, rows: list[CardCoverage]) -> str:
     s = summary(rows)
-    pct = 100 * (s[FULL] + s[SIMPLIFIED]) / s["total"] if s["total"] else 100
+    pct = 100 * (s[FULL] + s[TRANSLATED] + s[SIMPLIFIED]) / s["total"] if s["total"] else 100
     parts = [f"{s[FULL]} fully template-matched"] + [f"{s[k]} {label}" for k, label in
-                                              ((SIMPLIFIED, "simplified"), (PARTIAL, "partly supported"),
+                                              ((TRANSLATED, "fully translated by hand"), (SIMPLIFIED, "simplified"), (PARTIAL, "partly supported"),
                                                (UNKNOWN, "unknown")) if s[k]]
     lines = [f"{deck}: {pct:.0f}% matched by templates (including simplifications) ({', '.join(parts)}; {s['total']} cards)"]
     labels = {UNKNOWN: "unknown", PARTIAL: "partial", SIMPLIFIED: "simplified"}
     for r in rows:
-        if r.status == FULL:
+        if r.status in (FULL, TRANSLATED):
             continue
         notes = r.ignored if r.status != SIMPLIFIED else r.simplified
         lines.append(f"  {r.copies:>2} {r.name} [{labels[r.status]}]")

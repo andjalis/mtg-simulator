@@ -1,0 +1,52 @@
+{
+ "name": "Homarid Warrior",
+ "oracle_sha1": "05bce7f8845d",
+ "covers": [
+  "{U}: ~ gains shroud until end of turn and doesn't untap during your next untap step. Tap it."
+ ],
+ "patches": [
+  {
+   "face": "front",
+   "add": {
+    "activated": [
+     {
+      "$dc": "mtgsim.cards.model:Activated",
+      "kind": "ability",
+      "cost": {
+       "generic": 0,
+       "U": 1
+      },
+      "effects": [
+       {
+        "$dc": "mtgsim.cards.model:Effect",
+        "kind": "grant",
+        "target": "self",
+        "data": {
+         "keyword": "shroud"
+        }
+       },
+       {
+        "$dc": "mtgsim.cards.model:Effect",
+        "kind": "tap",
+        "amount": 1,
+        "target": "self"
+       },
+       {
+        "$dc": "mtgsim.cards.model:Effect",
+        "kind": "cx_skip_untap",
+        "target": "prev",
+        "data": {
+         "side": "theirs",
+         "yours_only": true
+        }
+       }
+      ],
+      "text": "{U}: ~ gains shroud until end of turn and doesn't untap during your next untap step. Tap it."
+     }
+    ]
+   }
+  }
+ ],
+ "verify": "tests/translated/test_cards.py::homarid_warrior",
+ "notes": "Same three effects in the order grant, tap, skip-untap."
+}

@@ -1,0 +1,47 @@
+{
+ "name": "Oni-Cult Anvil",
+ "oracle_sha1": "321e4fc21197",
+ "covers": [
+  "Whenever one or more artifacts you control leave the battlefield during your turn, create a 1/1 colorless Construct artifact creature token. This ability triggers only once each turn."
+ ],
+ "patches": [
+  {
+   "face": "front",
+   "add": {
+    "triggers": [
+     {
+      "$dc": "mtgsim.cards.model:Trigger",
+      "event": "ev:leaves",
+      "effects": [
+       {
+        "$dc": "mtgsim.cards.model:Effect",
+        "kind": "token",
+        "amount": 1,
+        "data": {
+         "name": "Construct",
+         "power": 1,
+         "toughness": 1,
+         "keywords": {
+          "$fs": []
+         },
+         "attacking": false,
+         "triggers": [],
+         "artifact": true,
+         "pt_per": "",
+         "colors": {
+          "$fs": []
+         }
+        }
+       }
+      ],
+      "filter": "Whenever one or more artifacts you control leave the battlefield",
+      "once": true,
+      "intervening_if": "your_turn"
+     }
+    ]
+   }
+  }
+ ],
+ "verify": "tests/translated/test_cards.py::oni_cult_anvil",
+ "notes": "'during your turn' as an intervening condition your_turn on the parser's leave-trigger."
+}

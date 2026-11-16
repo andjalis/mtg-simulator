@@ -1,0 +1,30 @@
+{
+ "name": "Guildsworn Prowler",
+ "oracle_sha1": "85ed187bb7a7",
+ "covers": [
+  "if it wasn't blocking, draw a card."
+ ],
+ "patches": [
+  {
+   "face": "front",
+   "add": {
+    "triggers": [
+     {
+      "$dc": "mtgsim.cards.model:Trigger",
+      "event": "dies",
+      "effects": [
+       {
+        "$dc": "mtgsim.cards.model:Effect",
+        "kind": "draw",
+        "amount": 1
+       }
+      ],
+      "intervening_if": "lib:[\"or\",\"lib:[\\\"not\\\",\\\"lib:[\\\\\\\"src_combat\\\\\\\"]\\\"]\",\"lib:[\\\"src_attacking\\\"]\"]"
+     }
+    ]
+   }
+  }
+ ],
+ "verify": "tests/translated/test_cards.py::guildsworn_prowler",
+ "notes": "'wasn't blocking' = not (attacking or blocking) or attacking."
+}

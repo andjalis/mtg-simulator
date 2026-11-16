@@ -1,0 +1,49 @@
+{
+ "name": "Mistway Spy",
+ "oracle_sha1": "eeddda276085",
+ "covers": [
+  "until end of turn, whenever a creature you control deals combat damage to a player, investigate."
+ ],
+ "patches": [
+  {
+   "face": "front",
+   "add": {
+    "triggers": [
+     {
+      "$dc": "mtgsim.cards.model:Trigger",
+      "event": "turned_face_up",
+      "effects": [
+       {
+        "$dc": "mtgsim.cards.model:Effect",
+        "kind": "cx_turn_trigger",
+        "data": {
+         "triggers": [
+          {
+           "$dc": "mtgsim.cards.model:Trigger",
+           "event": "ev:combat_damage_player",
+           "effects": [
+            {
+             "$dc": "mtgsim.cards.model:Effect",
+             "kind": "token",
+             "amount": 1,
+             "data": {
+              "kind": "clue"
+             }
+            }
+           ],
+           "filter": "Whenever a creature you control deals combat damage to a player"
+          }
+         ],
+         "head": "a creature you control deals combat damage to a player",
+         "body": "investigate"
+        }
+       }
+      ]
+     }
+    ]
+   }
+  }
+ ],
+ "verify": "tests/translated/test_cards.py::mistway_spy",
+ "notes": "turned_face_up trigger registering the parser's this-turn trigger."
+}
