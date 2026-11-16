@@ -55,4 +55,5 @@ def protected(perm, card, source) -> bool:
         subs |= set(_CREATURE_SUBTYPES)
     words += [_SUBTYPE_WORDS[s] for s in subs if s in _SUBTYPE_WORDS]
     words += [_SPELL_SUBTYPES[s] for s in subs if s in _SPELL_SUBTYPES]
-    return any(perm.has(f"protection from {w}") for w in words)
+    from .protection_qualities import protected as by_quality       # each color, legendary / modified creatures (#643)
+    return any(perm.has(f"protection from {w}") for w in words) or by_quality(perm, card, source)
