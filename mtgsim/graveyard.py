@@ -136,6 +136,8 @@ def activate(game, p, card, idx):
                      name=f"{card.name} graveyard ability", kind="ability")
     game.stack.append(item)
     game.log(f"activates {item}", p)
+    from .cx_trig_activate import note
+    note(game, p, card, item, zone="graveyard")
     game.check_ward(item)
     game.settle()
     return True

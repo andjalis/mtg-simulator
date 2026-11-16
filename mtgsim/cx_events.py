@@ -696,7 +696,9 @@ def split_head(line: str):
             if (bad or not effs) and rest.startswith("you "):
                 effs, bad = _parse_effects(rest[4].upper() + rest[5:])       # "you draw that many cards"
         if bad or not effs:
-            return None
+            continue        # a longer head may own the next comma ("of an artifact, creature, or land ...")
+        if got[1].get("kind") == "activate" and any(e.kind == "copy_spell" for e in effs):
+            return None     # "copy it": an ability, which copy_spell can't copy (cx_abilitycopy reads those)
         if got[1].get("kind") in ("tap_self", "tap_mana") and any(e.kind == "add_mana" for e in effs):
             return None     # a mana ability: the extra mana must be there for the same payment, not after it
         return tuple("ev:" + r for r in got[0]), head, rest
@@ -858,6 +860,8 @@ def _match(game, spec, event, perm, p, source, context, subject, wants_player=Fa
             return False        # a Curse: the player it enchants
         if not cx_trig_heads.player_ok(game, spec, actor, me):
             return False
+        if spec["kind"] == "activate" and not cx_trig_activate.match(game, spec, actor):
+            return False
         if spec["kind"] == "src_dmg_me":
             return game.event_dmg_by        # "that player": the damaging source's controller
         if spec["kind"] in ("tap_self", "tap_mana"):
@@ -942,3 +946,4 @@ from . import cx_trig_events  # noqa: E402  (extends the player-verb table above
 from . import cx_trig_cast  # noqa: E402  (cast-head qualifiers)
 from . import cx_trig_heads  # noqa: E402  (attack / damage / targeting / counter heads)
 from . import cx_trig_turn  # noqa: E402  (watchers of "Whenever <event> this turn, ..." triggers, #399)
+from . import cx_trig_activate  # noqa: E402  (activation events, #860)

@@ -211,6 +211,8 @@ class CostsMixin:
         for s in payment:       # "Whenever a player taps a land for mana" (cx_trig_heads)
             if isinstance(s, Permanent) and s.tapped and s in s.controller.battlefield:
                 self.fire(s.controller, "tapped_for_mana", s)
+        from ..cx_trig_activate import mana_paid
+        mana_paid(self, payment)        # mana abilities are activated abilities ("an ability of a creature", #860)
         return payment
 
     def x_quantity(self, p: Player, spec: tuple, item, prev) -> int:

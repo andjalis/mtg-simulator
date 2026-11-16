@@ -121,6 +121,9 @@ cx_events._OBSERVED.update({"p1_added", "m1_added", "unblocked", "player_targete
 
 def player_arg(kind, vm, spec) -> bool:
     """Read a player verb's own argument into the spec; False refuses the head."""
+    if kind == "activate":
+        from .cx_trig_activate import parse
+        return parse(vm, spec)
     if kind == "tap_mana":
         alts = cx_events._desc_alts(vm[2])
         if alts is None or not all(any(_is_land_word(w) for w in ws) for ws in alts):

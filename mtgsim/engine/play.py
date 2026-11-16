@@ -356,6 +356,9 @@ class PlayMixin:
         self.log(f"casts {card.name}" + (f" -> {targets}" if any(targets) else ""), p)
         if self.commits_crime(p, targets):
             self.fire(p, "crime")
+        if card.is_ability:     # channel, unearth, graveyard abilities: activated from hand / graveyard (#860)
+            from ..cx_trig_activate import note
+            note(self, p, base, item, zone="hand" if kind == "channel" else "graveyard")
         if not card.is_ability:
             for perm in list(p.battlefield):
                 for trig in perm.triggers:
