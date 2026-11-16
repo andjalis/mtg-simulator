@@ -363,6 +363,8 @@ class TurnsMixin:
         self.step = "upkeep"
         self.begin_upkeep(p)
         self.settle()
+        from ..opp_turn_plays import upkeep_denial
+        upkeep_denial(self, p)        # the other player's "target player can't play lands this turn" (#853)
         if self.over:
             return
         self.step = "draw"

@@ -109,6 +109,11 @@ def _ward_payable(game: Game, by: Player, perm, card: CardDef | None = None) -> 
 CREATURE_TARGETS = ("permanent", "creature", "creature_pw", "any")
 
 
+def _lazy_punish(game, me, item, options):
+    from .opp_turn_plays import punish_spell
+    return punish_spell(game, me, item, options)
+
+
 def _spell_options(game: Game, me: Player) -> list:
     """Hand cards plus adventures, flashback, foretold cards and other alternative casts."""
     cards = game.spell_options(me) if hasattr(game, "spell_options") else me.hand
@@ -1513,7 +1518,8 @@ class HeuristicAI:
             top = game.stack[-1]
             if top.controller is me:
                 return None
-            return self.save_creature(game, me, top, options) or self.counter(game, me, top, options)
+            return self.save_creature(game, me, top, options) or self.counter(game, me, top, options) or \
+                _lazy_punish(game, me, top, options)      # damage to target spell's controller (#853)
         if me is game.active:
             return None  # our own turn: main phases and after_blocks handle it
         if game.step == "declare_attackers":
