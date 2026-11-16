@@ -118,6 +118,8 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
     theirs = [x for x in legal if isinstance(x, Permanent) and x.controller is opp]
     mine = [x for x in legal if isinstance(x, Permanent) and x.controller is me]
     k = eff.kind
+    if k == "piles":            # "separate all creatures target player controls ..." (#634): the opponent's
+        return opp if opp in legal else None
     if k == "copy_spell":
         return max(legal, key=lambda i: i.card.cmc, default=None)
     if k in ("die_roll", "become_copy") and copies.group_model(game, me, eff, None) is not None:   # copy choices

@@ -82,6 +82,9 @@ def _parse_effects(text: str, opts: bool = False):
         from ..chance_templates import parse_rider as chance_rider
         if chance_rider(s, effects):
             continue
+        from ..votes import parse_rider as vote_rider       # "If A gets more votes, ..." after a vote (#634)
+        if vote_rider(s, effects):
+            continue
         if _cx_tokens.parse_rider(s, effects):
             continue
         from ..cx_exile_play import parse_rider as exile_play_rider        # "for as long as it remains exiled"

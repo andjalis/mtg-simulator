@@ -307,5 +307,11 @@ _EFFECT_PATTERNS += _spell_grants.EFFECT_PATTERNS
 from .. import until_nonland as _until_nonland  # noqa: E402  "exile until a nonland card, you may cast it" (#625)
 _EFFECT_PATTERNS += _until_nonland.EFFECT_PATTERNS
 _SUBS += _until_nonland.SUBS
+from .. import votes as _votes  # noqa: E402  will of the council / council's dilemma (#634)
+_EFFECT_PATTERNS += _votes.EFFECT_PATTERNS
+_parse_module._FACE_LINE_PARSERS = (_votes.face_line,) + _parse_module._FACE_LINE_PARSERS
+from .. import piles as _piles  # noqa: E402  separate into two piles (#634)
+_EFFECT_PATTERNS += _piles.EFFECT_PATTERNS
+_SUBS += _piles.SUBS
 from .. import another_target as _another_target  # noqa: E402  "another target creature you control" (#809)
 _SUBS += _another_target.SUBS
