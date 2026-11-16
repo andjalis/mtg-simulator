@@ -117,6 +117,9 @@ class CostsMixin:
         if spell is None:
             return True
         r = restriction or perm.card.mana_restriction
+        if r.startswith("zone:"):         # "... only to cast spells from exile / your graveyard / not your hand" (#644)
+            from ..cx_mana_zone import allowed as zone_allowed
+            return zone_allowed(self, perm, spell, r[5:])
         if r.startswith("pred:"):         # "Spend this mana only to cast <spells> or activate abilities of <sources>"
             from ..cx_abil_mana import allowed
             return allowed(r, spell)

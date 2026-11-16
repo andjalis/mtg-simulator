@@ -84,6 +84,9 @@ def _normal(text: str) -> str:
 
 
 def parse(text: str):
+    from .cx_mana_zone import code as zone_code
+    if zone_code(text):                     # where the spell is cast from (#644)
+        return zone_code(text)
     text = _normal(text.strip().lower())
     cast = acts = None
     m = re.fullmatch(r"(?:to cast (.+?))?(?:,? (?:or|and) )?(?:(?:to )?activate (?:abilities|equip abilities)"
