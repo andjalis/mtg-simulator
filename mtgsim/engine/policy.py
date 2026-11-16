@@ -80,6 +80,23 @@ def damage_amount(game: Game, eff: Effect, source=None) -> int:
     return max(0, src.power) if isinstance(src, Permanent) else 0
 
 
+def _blink_next_end_target(game: Game, me: Player, eff: Effect, mine: list, theirs: list, legal: list):
+    """A permanent of ours that gains from entering again (not the source itself); else the opponent's best one
+    (out of the game until the end step, a token for good); else nothing for an optional target, or the least
+    valuable legal one for a mandatory target (CR 603.3d: a trigger with a legal target must target)."""
+    src = game.target_source
+    src = getattr(src, "source", src)
+    gains = [x for x in mine if x is not src and not x.card.is_token and
+             (x.card.etb_effects or any(t.event == "etb" for t in x.card.triggers))]
+    if gains:
+        return max(gains, key=perm_value)
+    if theirs:
+        return max(theirs, key=perm_value)
+    if eff.data.get("optional_target"):
+        return None
+    return min((x for x in legal if isinstance(x, Permanent)), key=perm_value, default=None)
+
+
 def default_choose_target(game: Game, me: Player, eff: Effect):
     """A reasonable target for eff, respecting hexproof and targeting restrictions."""
     sel = eff.data.get("selector")
@@ -151,12 +168,21 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
         return choose(game, me, eff)
     if k in ('graveyard_exile_all', 'graveyard_exile_choice'):
         return opp
+    if k == 'player_loses':
+        return opp
+    if k == 'life_total':
+        op = eff.data['op']
+        if op == 'exchange':
+            return opp if opp.life > me.life else None
+        if op == 'double':
+            return me
+        return me if eff.amount > me.life else opp if eff.amount < opp.life else None
     if k == 'give_control_choice':      # a cost: give away the least valuable permanent that fits
         return min(mine, key=perm_value, default=None)
     if k == 'adapt_exception':
         return max(mine, key=perm_value, default=None)
-    if k in ('control_permanent', 'opponent_exile'):
-        return max(theirs, key=perm_value, default=None) if k == 'control_permanent' else opp
+    if k in ('control_permanent', 'control_linked', 'opponent_exile'):     # control_linked: "... for as long as ..."
+        return opp if k == 'opponent_exile' else max(theirs, key=perm_value, default=None)
     if k in ('grave_library_top', 'return_tribal_grave'):
         return max(legal, key=lambda c: c.cmc, default=None)
     if k == 'allocated_counter':
@@ -218,8 +244,8 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
     if k == 'search_plan' and eff.data.get('name_as_target'):
         from ..search_counted import choose_name_target
         return choose_name_target(game, me, eff)
-    if k == 'blink_next_end':
-        return max(mine, key=perm_value, default=None)
+    if k == 'blink_next_end':          # "exile target ..., return it at the next end step" (#774)
+        return _blink_next_end_target(game, me, eff, mine, theirs, legal)
     if k == 'relationship_mark':
         if eff.data.get('relationship') == 'counter':
             return max((x for x in mine if x.p1 > 0), key=lambda x: x.p1, default=None)
@@ -384,8 +410,8 @@ def _mode_value(game: Game, me: Player, effects: list) -> float:
                 total += search_counted.value(game, me, e)
             elif k in ("return_tribal_grave", "grave_library_top"):
                 total += tgt.cmc + 1 if tgt is not None else 0
-            elif k == "control_permanent":
-                total += 2 * perm_value(tgt)
+            elif k in ("control_permanent", "control_linked"):
+                total += 2 * perm_value(tgt) if tgt is not None else 0
             elif k == "populate":
                 total += max((perm_value(x) for x in me.creatures if x.card.is_token), default=0)
             elif k == "proliferate":

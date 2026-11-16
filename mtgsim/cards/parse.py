@@ -385,6 +385,7 @@ def _parse_effects(text: str, opts: bool = False):
     from ..cx_grammar_cond import resolve_instead
     unmatched += resolve_instead(effects, starts)    # "If C, B instead": the effects B replaces get "not C"
     mark(effects, pending)
+    from ..where_x import carry as _carry_x; _carry_x(effects)  # noqa: E702  an earlier sentence's X (#746)
     return effects, unmatched
 
 
@@ -1008,7 +1009,15 @@ def _parse_trigger_line(line: str):
             flt = "opp"
         if events == ("damages_player",) and "an opponent" in line:
             flt = "opp"
-        if events[0].startswith("host:") and events[0] != "host:dies":   # the creature is "~" (the trigger's source)
+        attachment_source = False
+        if events[0].startswith("host:") and events[0] != "host:dies" and \
+                re.search(r"~|\bthis (?:Equipment|Aura)\b", rest):
+            # the text names the Equipment / Aura itself ("sacrifice ~", "other than this Equipment"): it stays the
+            # source, and the creature is "that creature", the trigger's context (#793)
+            attachment_source = True
+            rest = re.sub(r"^it\b", "that creature", re.sub(r"\b(?:equipped|enchanted) creature\b", "that creature",
+                                                              rest))
+        elif events[0].startswith("host:") and events[0] != "host:dies":   # the creature is "~" (the trigger's source)
             rest = re.sub(r"^it\b", "~", re.sub(r"\b(?:equipped|enchanted) creature\b", "~", rest))
         if events == ("blocks",) and "a creature with flying" in pat:
             flt = "blocks_flying"
@@ -1124,8 +1133,8 @@ def _parse_trigger_line(line: str):
             return [], bad or [line], None
         gate = (cond or effs[0].cond) if intervening else ""
         once = events == ("targeted_mine",) or "for the first time each turn" in pat
-        return [Trigger(e, effs, flt_map[e] if flt_map else flt, once=once,
-                        intervening_if=gate) for e in events], bad, None
+        return [Trigger(e, effs, flt_map[e] if flt_map else flt, once=once, intervening_if=gate,
+                        data={"attachment_source": True} if attachment_source else {}) for e in events], bad, None
     from ..cx_trig_damage import parse as _damage_head      # damage heads from any source (#521)
     return _damage_head(line)
 
