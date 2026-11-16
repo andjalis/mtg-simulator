@@ -74,8 +74,9 @@ def choose(game, p, perm, card):
     produces = set(re.findall(r"Add \{([WUBRGC])\}", oracle))
     if exclude:
         produces |= set(card.produces)
-    if "mana of the chosen color" in oracle:
-        produces.add(color)
+    from .cx_trig_mana import own_mana
+    if "mana of the chosen color" in oracle and (own_mana(oracle) or not card.advanced_rules.get("tap_mana_bonus")):
+        produces.add(color)     # not Utopia Sprawl's triggered extra mana (cx_trig_mana, #860)
     subtypes = card.subtypes
     if kind == "basic_land" and "is the chosen type" in oracle:
         # Multiversal Passage (#821): "This land is the chosen type" gives it that basic type and its mana ability
