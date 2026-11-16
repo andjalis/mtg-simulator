@@ -431,6 +431,13 @@ def _on_battlefield(m):
     return _code("ctl_all", f, op, n) if f is not None and m["q"].lower() != "another" else ""
 
 
+@rule(r"you (?:don't|do not) control (?:a|an|any) (?P<f>.+?)")
+def _you_dont_control(m):
+    """"If you don't control a creature named Mowu, create Mowu, ..." (#525): none of them."""
+    f = _filter(m["f"], plural=False, names=True)
+    return _code("ctl", "you", f, "==", 0) if f is not None else ""
+
+
 @rule(r"no opponent controls (?:a|an|any) (?P<f>.+?)")
 def _no_opp_control(m):
     f = _filter(m["f"], plural=False, names=True)

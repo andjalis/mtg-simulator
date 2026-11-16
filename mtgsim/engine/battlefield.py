@@ -355,6 +355,8 @@ class BattlefieldMixin:
                                   colors=d.get("colors", ()))
                 if d.get('token_name'):
                     card = dataclasses.replace(card, name=d['token_name'])
+                if d.get('legendary'):          # "create Mowu, a legendary 3/3 ... token" (#525)
+                    card = dataclasses.replace(card, legendary=True)
                 if d.get("activated"):
                     card = dataclasses.replace(card, activated=d["activated"])
                 if d.get("spawn_mana"):     # Eldrazi Spawn / Scion: "Sacrifice this creature: Add {C}."
