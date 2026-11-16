@@ -569,6 +569,14 @@ def fits(card, what: str, perm=None) -> bool:
                 ok &= _TYPES[lw] in card.types
             elif lw == "basic":
                 ok &= card.basic
+            elif lw in _COLOR_WORDS:                       # "black creature card", "blue or red creature" (#802)
+                ok &= _COLOR_WORDS[lw] in card.colors
+            elif lw == "outlaw":                           # rule 700.12: Assassins, Mercenaries, Pirates, Rogues, Warlocks
+                ok &= bool(set(_OUTLAWS) & set(card.subtypes)) or card.changeling
+            elif lw == "historic":                         # rule 700.6: artifacts, legendaries and Sagas
+                ok &= card.is_artifact or bool(card.legendary) or "Saga" in card.subtypes
+            elif lw in ("battle", "nonbattle"):
+                ok &= ("Battle" in card.types) == (lw == "battle")
             elif w[0].isupper():
                 ok &= w in card.subtypes or card.changeling
             else:
@@ -576,6 +584,20 @@ def fits(card, what: str, perm=None) -> bool:
         if ok:
             return True
     return False
+
+
+_COLOR_WORDS = {"white": "W", "blue": "U", "black": "B", "red": "R", "green": "G"}
+_OUTLAWS = ("Assassin", "Mercenary", "Pirate", "Rogue", "Warlock")
+_KNOWN = {"permanent", "legendary", "nonlegendary", "token", "nontoken", "nonland", "noncreature", "nonartifact",
+          "creature", "basic", "outlaw", "historic", "battle", "nonbattle"} | set(_TYPES) | set(_COLOR_WORDS)
+
+
+def readable(what: str) -> bool:
+    """Whether fits understands every word of a description (capitalised words are subtypes). A description with any
+    other word ("another permanent", "creature card from your graveyard to the battlefield, then ...") would match
+    nothing (#802)."""
+    words = [w for alt in ALTERNATIVES.split(what.strip()) for w in alt.split()]
+    return bool(words) and all(w[0].isupper() or w.lower() in _KNOWN or w.lower().startswith("non-") for w in words)
 
 
 def score(card) -> float:

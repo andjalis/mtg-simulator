@@ -453,6 +453,10 @@ def _gy_move(m):
     if re.search(r"\b(this|named|that)\b", what) or what.lower().startswith("up to") or \
             re.match(r"(?:\w+ )?target\b", what, re.I):
         return NO_MATCH         # a count word the head didn't take must not become the card description (#546)
+    from ..copies import readable
+    from ..engine.state import _gy_desc
+    if what and not readable(_gy_desc(what)):
+        return NO_MATCH         # a description copies.fits can't read ("another permanent") would return nothing (#802)
     w = re.search(r"\b(one|two|three|four|five|six|x)\b", head)
     n = 99 if head.startswith("all") else (_N_WORDS[w[1]] if w else 1)
     return Effect("gy_move", n, data={"what": what, "dest": "hand" if m[6].endswith("hand") else "bf",
