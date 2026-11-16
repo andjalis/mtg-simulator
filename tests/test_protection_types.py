@@ -28,7 +28,7 @@ class Parsing(unittest.TestCase):
 
     def test_unknown_words_stay_unsupported(self):
         for text in ("Protection from Foos", "Protection from Demons and from everything",
-                     "Protection from each color"):
+                     "Protection from each player"):       # "each color" is read since #643
             self.assertNotEqual(card("Test Thing", "{1}", "Creature — Human", text, 1, 1).unsupported, [], text)
 
 

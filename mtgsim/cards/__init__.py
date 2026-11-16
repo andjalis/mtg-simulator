@@ -288,6 +288,8 @@ _SUBS += _chance_each.SUBS
 _EFFECT_PATTERNS += _chance_each.EFFECT_PATTERNS
 from .. import protection_types as _protection_types  # noqa: E402
 KEYWORDS.update(_protection_types.KEYWORDS)
+from .. import protection_qualities as _protection_qualities  # noqa: E402  "protection from each color" (#643)
+KEYWORDS.update(_protection_qualities.KEYWORDS)
 from .. import bounce_own as _bounce_own  # noqa: E402
 _EFFECT_PATTERNS += _bounce_own.EFFECT_PATTERNS
 from .. import zone_exile as _zone_exile  # noqa: E402

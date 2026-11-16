@@ -322,4 +322,6 @@ def hexproof_from(perm, by, source) -> bool:
     from .engine.state import COLOR_WORDS
     if len(card.colors) == 1 and perm.has("hexproof from monocolored"):
         return True
-    return any(perm.has(f"hexproof from {w}") for w, c in COLOR_WORDS.items() if c in card.colors)
+    from .protection_qualities import hexproof          # each color, planeswalkers / card types (#643)
+    return any(perm.has(f"hexproof from {w}") for w, c in COLOR_WORDS.items() if c in card.colors) or \
+        hexproof(perm, card)
