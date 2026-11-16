@@ -273,6 +273,8 @@ from .. import cx_trig_turn as _cx_trig_turn  # noqa: E402
 _EFFECT_PATTERNS += _cx_trig_turn.EFFECT_PATTERNS
 from .. import cx_spent as _cx_spent  # noqa: E402
 _SUBS += _cx_spent.SUBS
+from .. import named_tokens as _named_tokens  # noqa: E402
+_EFFECT_PATTERNS += _named_tokens.EFFECT_PATTERNS
 from .. import library_peek as _library_peek  # noqa: E402
 _EFFECT_PATTERNS += _library_peek.EFFECT_PATTERNS
 _SUBS += _library_peek.SUBS
@@ -305,5 +307,7 @@ _EFFECT_PATTERNS += _spell_grants.EFFECT_PATTERNS
 from .. import until_nonland as _until_nonland  # noqa: E402  "exile until a nonland card, you may cast it" (#625)
 _EFFECT_PATTERNS += _until_nonland.EFFECT_PATTERNS
 _SUBS += _until_nonland.SUBS
+from .. import another_target as _another_target  # noqa: E402  "another target creature you control" (#809)
+_SUBS += _another_target.SUBS
 from .. import cx_grammar_edicts as _cx_grammar_edicts  # noqa: E402  "chooses N ..., then sacrifices the rest" (#631)
 _SUBS += _cx_grammar_edicts.SUBS

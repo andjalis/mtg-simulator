@@ -431,6 +431,13 @@ def _on_battlefield(m):
     return _code("ctl_all", f, op, n) if f is not None and m["q"].lower() != "another" else ""
 
 
+@rule(r"you (?:don't|do not) control (?:a|an|any) (?P<f>.+?)")
+def _you_dont_control(m):
+    """"If you don't control a creature named Mowu, create Mowu, ..." (#525): none of them."""
+    f = _filter(m["f"], plural=False, names=True)
+    return _code("ctl", "you", f, "==", 0) if f is not None else ""
+
+
 @rule(r"no opponent controls (?:a|an|any) (?P<f>.+?)")
 def _no_opp_control(m):
     f = _filter(m["f"], plural=False, names=True)
@@ -1205,7 +1212,8 @@ def check(game, p, code: str, item=None, source=None, prev=None):
         pl = _player_for(game, p, who, item)
         if pl is None:
             return False
-        value = pl.life if what == "life" else len(pl.hand) if what == "hand" else pl.counters.get("poison", 0)
+        value = pl.life if what == "life" else len(pl.hand) if what == "hand" else \
+            len(pl.library) if what == "library" else pl.counters.get("poison", 0)     # library: cx_library_conds
         return _cmp(value, op, n)
     if kind == "life_vs_opp":
         return _cmp(p.life, args[0], game.opponent(p).life)
@@ -1558,3 +1566,7 @@ def _spell_ok(spell, spec) -> bool:
             if value is None or not _cmp(int(value or 0), *want):
                 return False
     return _card_ok(card, spec) if spec else True
+
+
+from . import cx_library_conds  # noqa: E402  more rules: library size, exact hand size (#629)
+_EXTRA_RULES = (cx_library_conds,)
