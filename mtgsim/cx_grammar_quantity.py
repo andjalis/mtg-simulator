@@ -29,6 +29,8 @@ from __future__ import annotations
 
 import re
 
+from . import this_way
+
 _COLORS = {"white": "W", "blue": "U", "black": "B", "red": "R", "green": "G"}
 _STATS = ("power", "toughness", "mana value")
 _ZONES = {"in all graveyards": "all_gy", "in each graveyard": "all_gy", "in your graveyard": "your_gy", "in an opponent's graveyard": "opp_gy",
@@ -112,6 +114,9 @@ def quantity(text: str):
                      r"destroyed this way", low)
     if m:       # the destroy just before it in this resolution (wrath, destroy_all, group_remove, ... record it) (#337)
         return ("this_way", "destroyed", m[1][:-1])
+    tw = this_way.parse_quantity(t)
+    if tw:          # "the number of creature cards milled this way" (#642)
+        return tw
     if low == "the number of cards drawn this way":
         return ("this_way", "drawn", "card")    # the draw just before it in this resolution (kinds.cards.draw)
     m = re.fullmatch(r"(twice|half) (.+?)(?:, rounded (up|down))?", t, re.I)
@@ -124,6 +129,16 @@ def quantity(text: str):
     if m:
         noun = _noun(m[3])
         return ("cxq", m[1].lower(), m[2].lower(), noun) if noun else None
+    m = re.fullmatch(r"the number of (?:different (mana values|powers|toughnesses)|(colors)) among (.+)", t, re.I)
+    if m:       # "a card for each different mana value among nonland permanents you control" (#337)
+        stat = {"mana values": "mana value", "powers": "power", "toughnesses": "toughness"}.get(
+            (m[1] or "").lower(), "colors")
+        zone = re.fullmatch(r"(.+?) (in your graveyard|in all graveyards|in your hand)", m[3], re.I)
+        if zone:
+            cards = _cards(zone[1])
+            return ("cxq", "distinct_cards", stat, _ZONES[zone[2].lower()], cards) if cards is not None else None
+        noun = _noun(m[3])
+        return ("cxq", "distinct", stat, noun) if noun else None
     m = re.fullmatch(r"the number of card types among cards (in all graveyards|in your graveyard)", low)
     if m:
         return ("cxq", "card_types", _ZONES[m[1]])
@@ -221,6 +236,8 @@ def _stat(perm, stat: str) -> int:
 
 def value(game, p, spec, item, prev) -> int:
     kind = spec[1]
+    if kind == "tw":
+        return this_way.value(game, p, spec, item)
     if kind == "flips":
         return getattr(item, "flips_" + spec[2], 0)
     if kind == "devotion":
@@ -270,6 +287,22 @@ def value(game, p, spec, item, prev) -> int:
             return sum(1 for c in cards if c.name == name)
         from .cx_condlib import _card_ok
         return sum(1 for c in cards if _card_ok(c, spec[3]))
+    if kind in ("distinct", "distinct_cards"):
+        if kind == "distinct":
+            from .cx_grammar import group_members
+            objs = [(x.card, x) for x in group_members(game, p, {"group": spec[3]}, _source(item))]
+        else:
+            from .cx_condlib import _card_ok
+            objs = [(c, None) for c in _zone_cards(game, p, spec[3]) if _card_ok(c, spec[4])]
+        if spec[2] == "colors":
+            return len({c for card, _ in objs for c in card.colors})
+        values = set()
+        for card, perm in objs:
+            v = _stat(perm, spec[2]) if perm is not None else card.cmc if spec[2] == "mana value" else \
+                getattr(card, spec[2], None)
+            if v is not None:
+                values.add(v)
+        return len(values)
     if kind == "hist":
         hist = getattr(game, "_condlib_hist", None)
         return hist[1].get((spec[2], p.name), 0) if hist is not None and hist[0] == game.turn else 0

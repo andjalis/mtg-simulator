@@ -105,7 +105,7 @@ class Parsing(unittest.TestCase):
         for text in ("Add {R} for each card in target opponent's hand.",
                      "Add {C} for each {S} spent to cast this spell.",
                      "Add {R} for each card revealed this way.",
-                     "Add {R} for each card discarded this way.",
+                     # "for each card discarded this way" is read by mtgsim.this_way since #642 (test_this_way)
                      "Add {R} for each card named Rite of Flame in each graveyard.",
                      "Add {R} for each 1 life your opponents have lost this turn.",
                      "Add {R} for each creature that died this way."):

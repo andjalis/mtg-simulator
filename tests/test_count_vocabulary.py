@@ -117,10 +117,9 @@ class RealCards(unittest.TestCase):
                      "Skred", "Conifer Wurm"):     # Skred / Conifer Wurm: snow counts since #536
             self.assertEqual(card_coverage(db.get(name)).status, "full", name)       # now through readings that count
         for name in ("Steal the Show", "Spite of Mogis",       # "instant and sorcery cards" is a union (#449)
-                     "Herd Migration"):                         # tokens for each basic land type (#329)
+                     "Herd Migration",                          # tokens for each basic land type (#329)
+                     "Golden Ratio"):                           # distinct powers since #337
             self.assertEqual(card_coverage(db.get(name)).status, "full", name)
-        for name in ("Golden Ratio",):
-            self.assertEqual(card_coverage(db.get(name)).status, "partial", name)    # no reading counts these yet
 
 
 if __name__ == "__main__":

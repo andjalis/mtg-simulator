@@ -140,6 +140,8 @@ def parse(s: str, effects: list, starts=()) -> bool:
     on each of them."), so the sentence is refused."""
     if len(starts) >= 2 and starts[-2] == starts[-1]:
         return False
+    if s.strip().rstrip(".") == "DECLAREDATTACKERS":
+        return _declared(effects)
     if apply(s, effects):
         return True
     m = _COMPOUND.fullmatch(s.strip().rstrip("."))
@@ -150,6 +152,25 @@ def parse(s: str, effects: list, starts=()) -> bool:
     if bad or not new or not apply(m[2], new):
         return False
     effects += new
+    return True
+
+
+def _declared(effects: list) -> bool:
+    """cx_attack_refs' marker: the group before it ("each attacking creature you control ...") is the creatures
+    declared as attackers, not ones put onto the battlefield attacking since."""
+    if not effects or effects[-1].kind not in ("permanent_group", "cx_group"):
+        return False
+    last = effects[-1]
+    holder = last.data if "selector" in last.data else last.data.get("group", {})
+    sel = holder.get("selector")
+    if not sel or "attacking" not in sel.get("traits", []):
+        return False
+    sel = dict(sel, traits=["declared_attacker" if t == "attacking" else t for t in sel["traits"]])
+    if holder is last.data:
+        data = dict(last.data, selector=sel)
+    else:
+        data = dict(last.data, group=dict(holder, selector=sel))
+    effects[-1] = dataclasses.replace(last, data=data)
     return True
 
 

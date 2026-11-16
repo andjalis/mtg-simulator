@@ -26,7 +26,7 @@ class Parsing(unittest.TestCase):
         self.assertTrue(QUANDRIX.advanced_rules["spell_grants"][0][1])
 
     def test_refusals(self):
-        for text in ("The first spell you cast each turn has cascade.",
+        for text in ("The first spell you cast from exile each turn has cascade.",
                      "Creature spells you cast have demonstrate.",                   # not read from the spell
                      "Artifact spells you control have convoke.",
                      "Spells you cast that share a color have convoke.",
