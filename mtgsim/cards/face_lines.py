@@ -242,6 +242,9 @@ def _face_mode_and_ward_lines(st, line):
         if m:
             extra["ward_life"] = int(m[1])
             return None
+        from .. import ward_costs as _ward_costs
+        if _ward_costs.parse_line(line, st):            # "Ward—Sacrifice a creature." (#646)
+            return None
         if re.fullmatch(r"Ward—Discard a card\.", line):
             extra["ward_discard"] = True
             return None

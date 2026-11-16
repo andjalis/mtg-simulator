@@ -186,6 +186,10 @@ class EffectsMixin:
                 if not life_locked(payer) and payer.life > n + 2 and self.hook(payer, "pay_unless")(self, payer, 0, target):
                     self.change_life(payer, -n, f"ward: pay {n} life")
                     return
+            elif eff.data.get("ward_cost"):          # non-mana ward costs (ward_costs, #646)
+                from ..ward_costs import pay as pay_ward
+                if pay_ward(self, payer, eff.data["ward_cost"], eff.data.get("warded"), target):
+                    return
             elif eff.data.get("discard"):
                 if payer.hand and self.hook(payer, "pay_unless")(self, payer, 0, target):
                     card = payer.ai.choose_discard(self, payer)
