@@ -571,6 +571,9 @@ def fits(card, what: str, perm=None) -> bool:
                 ok &= card.basic
             elif lw in _COLOR_WORDS:                       # "black creature card", "blue or red creature" (#802)
                 ok &= _COLOR_WORDS[lw] in card.colors
+            elif lw in ("multicolored", "monocolored", "colorless"):       # Reborn Hope, Vivid Revival (#802)
+                n = len(card.colors)
+                ok &= n >= 2 if lw == "multicolored" else n == 1 if lw == "monocolored" else n == 0
             elif lw == "outlaw":                           # rule 700.12: Assassins, Mercenaries, Pirates, Rogues, Warlocks
                 ok &= bool(set(_OUTLAWS) & set(card.subtypes)) or card.changeling
             elif lw == "historic":                         # rule 700.6: artifacts, legendaries and Sagas
@@ -589,7 +592,8 @@ def fits(card, what: str, perm=None) -> bool:
 _COLOR_WORDS = {"white": "W", "blue": "U", "black": "B", "red": "R", "green": "G"}
 _OUTLAWS = ("Assassin", "Mercenary", "Pirate", "Rogue", "Warlock")
 _KNOWN = {"permanent", "legendary", "nonlegendary", "token", "nontoken", "nonland", "noncreature", "nonartifact",
-          "creature", "basic", "outlaw", "historic", "battle", "nonbattle"} | set(_TYPES) | set(_COLOR_WORDS)
+          "creature", "basic", "outlaw", "historic", "battle", "nonbattle", "multicolored", "monocolored",
+          "colorless"} | set(_TYPES) | set(_COLOR_WORDS)
 
 
 def readable(what: str) -> bool:

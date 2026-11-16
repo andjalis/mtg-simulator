@@ -38,6 +38,11 @@ class Fits(unittest.TestCase):
         self.assertTrue(copies.fits(LEGEND, "historic"))
         self.assertFalse(copies.fits(BEAR, "historic"))
         self.assertTrue(copies.fits(BEAR, "nonbattle permanent"))
+        gold = card("Test Gold", "{G}{W}", "Creature — Elf Soldier", "", 3, 3)
+        self.assertTrue(copies.fits(gold, "multicolored"))
+        self.assertFalse(copies.fits(BEAR, "multicolored"))
+        self.assertTrue(copies.fits(BEAR, "monocolored"))
+        self.assertTrue(copies.fits(RELIC, "colorless"))
 
     def test_readable(self):
         for desc in ("black creature", "outlaw creature", "non-Assassin historic", "Vampire or Wizard creature",
