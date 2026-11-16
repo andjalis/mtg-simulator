@@ -19,8 +19,16 @@ from .protection import CHOICE
 _RX = re.compile(r"protection from (?:(artifacts|colorless) or from )?the color of your choice", re.I)
 
 
+_SPELL_TYPES = re.compile(r"protection from (instant|sorcery) spells(?:,? and from (instant|sorcery) spells)?", re.I)
+_PLURAL = {"instant": "instants", "sorcery": "sorceries"}
+
+
 def keyword_list(text: str):
-    """[keyword] for the choice phrase, else None."""
+    """[keyword] for the choice phrase; ["protection from instants", ...] for "protection from instant spells and from
+    sorcery spells" (protection_types' keywords: an instant is only ever a spell or a card); else None."""
+    s = _SPELL_TYPES.fullmatch(text.strip())
+    if s:
+        return [f"protection from {_PLURAL[w.lower()]}" for w in s.groups() if w]
     m = _RX.fullmatch(text.strip())
     if not m:
         return None

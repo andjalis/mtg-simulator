@@ -19,6 +19,7 @@ def split_lines(text: str) -> str:
     text = _SEMI.sub(lambda m: "\n".join(x[0].upper() + x[1:] for x in m[1].split("; ")), text)
     text = _FLAVOR_EQUIP.sub(r"\1", text)
     text = _FROM_LIST.sub(_from_list, text)
+    text = _COMMA_LIST.sub(_numbered_list, text)
     text = _MV_TAIL.sub(lambda m: m[1] + "\nP" + m[2][1:], text)
     # CR 702.6a: "Equip [cost]" means "[Cost]: Attach this permanent to target creature you control. Activate only
     # as a sorcery." A non-mana cost ("Equip—Pay 3 life.") is read as that activated ability, so its cost goes
@@ -65,8 +66,8 @@ def typecycling(line: str):
 _FROM_LIST = re.compile(r"(?m)^(Protection|Hexproof) from ([A-Za-z-]+(?:, (?:from )?[A-Za-z-]+)*,? and (?:from )?"
                         r"[A-Za-z-]+) *$")
 # "Lifelink, protection from mana value 3 or greater": the mana-value protection on a line of its own
-_MV_TAIL = re.compile(r"(?m)^([A-Z][a-z]+(?: [a-z]+)*(?:, [a-z]+(?: [a-z]+)*)*), (protection from mana value \d+ or "
-                      r"(?:greater|less)) *$")
+_MV_TAIL = re.compile(r"(?m)^([A-Z][a-z]+(?: [a-z]+)*(?:, [A-Za-z][a-z]+(?: [a-z]+)*)*), (protection from (?:mana value "
+                      r"\d+ or (?:greater|less)|non-[A-Z][a-z]+)) *$")
 
 
 def _from_list(m):
@@ -77,3 +78,20 @@ def _from_list(m):
     if len(kws) < 2 or not all(k in KEYWORDS for k in kws):
         return m[0]
     return ", ".join(k[0].upper() + k[1:] if i == 0 else k for i, k in enumerate(kws))
+
+
+# "Flying, protection from spells that are one or more colors, annihilator 6" (#643): a comma keyword list with a
+# numbered keyword the engine reads only on a line of its own; split into one line per keyword when every other piece
+# is a known keyword (else the line is left as printed).
+_NUMBERED = ("renown", "bloodthirst", "fabricate", "vanishing", "fading", "modular", "soulshift", "annihilator",
+             "rampage", "backup", "afflict")
+_COMMA_LIST = re.compile(r"(?m)^([A-Z][a-z]+(?: [a-z-]+)*(?:, [A-Za-z][a-z-]+(?: [a-z-]+)*(?: \d+)?)+) *$")
+
+
+def _numbered_list(m):
+    from .cards.model import KEYWORDS
+    pieces = [x.strip() for x in m[1].split(", ")]
+    numbered = [x for x in pieces if re.fullmatch(r"[A-Za-z]+ \d+", x) and x.split()[0].lower() in _NUMBERED]
+    if not numbered or not all(x in numbered or x.lower() in KEYWORDS for x in pieces):
+        return m[0]
+    return "\n".join(x[0].upper() + x[1:] for x in pieces)

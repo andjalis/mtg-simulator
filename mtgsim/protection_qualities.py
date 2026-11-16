@@ -25,13 +25,25 @@ import re
 _HEX_TYPES = {"artifacts": "Artifact", "creatures": "Creature", "enchantments": "Enchantment",
               "planeswalkers": "Planeswalker"}
 KEYWORDS = frozenset({"protection from each color", "hexproof from each color", "protection from legendary creatures",
-                      "protection from modified creatures", "protection from colorless"}
+                      "protection from modified creatures", "protection from colorless",
+                      "protection from spells that are one or more colors"}
                      | {f"hexproof from {w}" for w in _HEX_TYPES})
 
 _MV = re.compile(r"(?:[A-Z][\w' ]* — )?Protection from mana value (\d+) or (greater|less)")
 
 
+_NON = re.compile(r"Protection from non-([A-Z][a-z]+?)(s| creatures)")
+
+
 def parse_line(line: str, st) -> bool:
+    n = _NON.fullmatch(line.strip())
+    if n:
+        from .permanent_templates import _SUBTYPE_TYPES
+        sub = n[1] if n[2] == " creatures" else _singular(n[1] + "s")
+        if sub is None or sub.lower() not in _SUBTYPE_TYPES:
+            return False
+        st.extra.setdefault("advanced_rules", {})["protection_non"] = (sub, n[2] == " creatures")
+        return True
     m = _MV.fullmatch(line.strip())
     if not m:
         return False
@@ -54,6 +66,13 @@ def protected(perm, card, source) -> bool:
     if card.colors and perm.has("protection from each color") or not card.colors and \
             perm.has("protection from colorless"):
         return True
+    if not isinstance(source, Permanent) and card.colors and not getattr(card, "is_ability", False) and \
+            perm.has("protection from spells that are one or more colors"):
+        return True                 # Emrakul, the Aeons Torn: a coloured spell (a card, not a permanent's ability)
+    non = perm.card.advanced_rules.get("protection_non") if perm.card.advanced_rules else None
+    if non and not perm.abilities_suppressed and (not non[1] or isinstance(source, Permanent) and source.is_creature) \
+            and non[0] not in card.subtypes and not (getattr(card, "changeling", False) and card.is_creature):
+        return True                 # "protection from non-Spirit creatures" / "from non-Squirrels"
     if isinstance(source, Permanent) and source.is_creature:
         if card.legendary and perm.has("protection from legendary creatures"):
             return True
@@ -67,3 +86,10 @@ def hexproof(perm, card) -> bool:
     if card.colors and perm.has("hexproof from each color"):
         return True
     return any(t in card.types and perm.has(f"hexproof from {w}") for w, t in _HEX_TYPES.items())
+
+
+def _singular(plural: str):
+    """"Squirrels" -> "Squirrel" (protection_types' plural table, reversed)."""
+    from .protection_types import _SUBTYPE_WORDS
+    low = plural.lower()
+    return next((s.capitalize() for s, p in _SUBTYPE_WORDS.items() if p == low), None)
