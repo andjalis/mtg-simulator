@@ -564,7 +564,7 @@
   {
     "match": "destroy target permanent",
     "effect": "destroy",
-    "target": "nonland_perm",
+    "target": "permanent",
     "example": "destroy target permanent",
     "cards": ["Angel of Despair"]
   },
