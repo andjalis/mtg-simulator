@@ -5,7 +5,7 @@ import re
 
 
 # cx_costs kinds a graveyard ability can pay (the card itself is never one of the cards it exiles or taps)
-_GY_COSTS = ("discard", "discard_random", "mill", "tap", "exile_gy", "sacrifice_n")
+_GY_COSTS = ("discard", "discard_random", "mill", "tap", "exile_gy", "sacrifice_n", "sac_sub")
 
 
 def is_return_ability(line):
@@ -74,6 +74,9 @@ def worth(game, p, card, idx) -> bool:
         if kind == "sacrifice_n":
             from .cx_abil_costs import _sac_pool
             victims += _sac_pool(game, p, card, spec)[:n]
+        elif kind == "sac_sub":        # "Sacrifice two Blood tokens" (#859)
+            from .cost_parts import _sub_pool
+            victims += _sub_pool(p, card, spec)[:n]
         elif kind in ("discard", "discard_random") and len(p.hand) <= n:
             return False
         elif kind == "mill" and len(p.library) < n + 10:

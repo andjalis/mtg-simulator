@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import re
 
+from . import cost_parts  # noqa: E402  #859
 from . import cx_abil_costs as abil_costs
 
 _Q = r"(?P<q>a|an|one|two|three|four|five|six|seven|another)"
@@ -82,6 +83,9 @@ def payable(game, p, perm, costs) -> bool:
         if kind in abil_costs.KINDS:
             if not abil_costs.payable(game, p, perm, kind, n, spec):
                 return False
+        elif kind in cost_parts.KINDS:
+            if not cost_parts.payable(game, p, perm, kind, n, spec):
+                return False
         elif kind in ("tap", "bounce", "discard", "discard_random", "exile_gy"):
             pool = [c for c in _candidates(game, p, perm, kind, spec) if id(c) not in used]
             if len(pool) < n:
@@ -117,6 +121,9 @@ def pay(game, p, perm, costs) -> bool:
     for kind, n, spec in costs:
         if kind in abil_costs.KINDS:
             if not abil_costs.pay_one(game, p, perm, kind, n, spec):
+                return False
+        elif kind in cost_parts.KINDS:
+            if not cost_parts.pay_one(game, p, perm, kind, n, spec):
                 return False
         elif kind == "tap":
             for x in _cheap(_candidates(game, p, perm, kind, spec))[:n]:
