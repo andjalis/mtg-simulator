@@ -22,31 +22,34 @@ class ParseShapes(unittest.TestCase):
         self.assertEqual(parse("it isn't a creature"), 'lib:["ref_not_is",{"types":["creature"]},"prev"]')
         self.assertEqual(parse("it's not a token"), 'lib:["ref_not_is",{"types":["token"]},"prev"]')
         self.assertEqual(parse("that creature wasn't a token"),
-                         'lib:["ref_not_is",{"types":["token"]},"prev"]')
+                         'lib:["ref_not_is",{"types":["token"]},"that"]')
         self.assertTrue(parse("it isn't a land card").startswith('lib:["ref_not_is"'))
-        self.assertEqual(parse("that spell has mana value 5 or greater"),
-                         'lib:["ref_stat","mana value",">=",5,"spell"]')
+        self.assertEqual(parse("that spell has mana value 5 or greater"), 'lib:["prev_is",{"mv":[">=",5]}]')
+        self.assertEqual(parse("that permanent has mana value 3 or less"),
+                         'lib:["ref_stat","mana value","<=",3,"that"]')
         self.assertEqual(parse("it has mana value 3 or less"), 'lib:["ref_stat","mana value","<=",3,"prev"]')
         self.assertEqual(parse("its power is less than ~'s power"),
                          'lib:["ref_stat_vs","power","<","~","power","prev"]')
         self.assertEqual(parse("that creature's power is greater than ~'s power"),
-                         'lib:["ref_stat_vs","power",">","~","power","prev"]')
+                         'lib:["ref_stat_vs","power",">","~","power","that"]')
         self.assertEqual(parse("it had power greater than ~'s power"),
                          'lib:["ref_stat_vs","power",">","~","power","prev"]')
         self.assertTrue(parse("that creature has greater power or toughness than ~").startswith('lib:["or"'))
         self.assertEqual(parse("its power is exactly 20"), 'lib:["ref_stat","power","==",20,"prev"]')
         self.assertEqual(parse("its power is greater than 0"), 'lib:["ref_stat","power",">",0,"prev"]')
         self.assertEqual(parse("that creature has power 7 or greater"),
-                         'lib:["ref_stat","power",">=",7,"prev"]')
+                         'lib:["ref_stat","power",">=",7,"that"]')
         self.assertTrue(parse("it was a Locus or Sphere land").startswith('lib:["or"'))
         self.assertEqual(parse("that land was nonbasic"), 'lib:["prev_is",{"basic":false}]')
-        self.assertEqual(parse("that card is legendary"), 'lib:["prev_is",{"legendary":true}]')
+        self.assertEqual(parse("that card is legendary"), 'lib:["ref_card_is",{"legendary":true}]')
         self.assertEqual(parse("that permanent was blue or black"), 'lib:["prev_is",{"any_color":["U","B"]}]')
         self.assertEqual(parse("that card is exiled"), 'lib:["ref_zone","exiled","card"]')
-        self.assertTrue(parse("it was enchanted or equipped").startswith('lib:["or"'))
+        self.assertTrue(parse("it is enchanted or equipped").startswith('lib:["or"'))
         self.assertEqual(parse("it's renowned"), 'lib:["ref_flag","renowned","prev"]')
-        self.assertEqual(parse("it had a counter on it"), 'lib:["ref_any_counters",">=",1,"prev"]')
-        self.assertEqual(parse("it had no counters on it"), 'lib:["ref_any_counters","==",0,"prev"]')
+        self.assertEqual(parse("it had a counter on it"), 'lib:["any_counters","it"]')
+        self.assertEqual(parse("it has no counters on it"), '!lib:["any_counters","it"]')
+        self.assertEqual(parse("that creature is another Hero"),
+                         'lib:["and","lib:[\\"prev_is\\",{\\"sub\\":[\\"Hero\\"]}]","lib:[\\"ref_not_src\\",\\"that\\"]"]')
 
     def test_refusals(self):
         # a predicate the shared noun-phrase reader doesn't know keeps the line ignored, and so do
@@ -54,8 +57,8 @@ class ParseShapes(unittest.TestCase):
         for phrase in ("it's an art sticker", "that card has the chosen name", "it has a single target",
                        "it has mutate", "it doesn't have suspend", "that spell is countered this way",
                        "they do", "it's the third time", "it's a fibonacci number", "its mana value is odd",
-                       "it had power greater than its toughness",
-                       "it's on the battlefield and you control 9 or fewer creatures named ~"):
+                       "it had power greater than its toughness", "that card has a counter on it",
+                       "that spell has two +1/+1 counters on it"):
             self.assertEqual(parse(phrase), "", phrase)
 
 

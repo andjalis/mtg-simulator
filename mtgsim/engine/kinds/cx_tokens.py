@@ -26,6 +26,10 @@ def cx_token(game, p, eff, target, opp, item=None, **_):
         card = target.copiable_card if isinstance(target, Permanent) else target if isinstance(target, CardDef) \
             else None
         context = getattr(item, "context", None)
+        source = getattr(item, "source", None)
+        if card is None and target is None and eff.target == "prev" and getattr(item, "kind", "") == "trigger" \
+                and context is None and isinstance(source, Permanent) and source not in source.controller.battlefield:
+            card = source.copiable_card     # "When ~ dies, create a token that's a copy of it": "it" is ~ (LKI)
         if card is None and eff.data.get("ref") == "card":
             if getattr(item, "exiled_card", None) is not None:      # "you may exile a card ... If you do, ..."
                 card = item.exiled_card

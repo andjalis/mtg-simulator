@@ -376,6 +376,7 @@ def _parse_effects(text: str, opts: bool = False):
                     and not excess_damage.parse(s, effects):   # "Otherwise, ..."; grammar; counted targets (#312); excess (#560)
                 unmatched.append(sentence.strip())
         effects[first:] = _cx_tokens.reparse(s, effects[first:])
+        _otherwise_without_roll(s, effects, first)     # Shelinda: "Otherwise" after a condition, not a roll
         if paid:
             for eff in effects[first:]:
                 eff.cond = eff.cond or "paid"
@@ -1144,3 +1145,4 @@ def _parse_trigger_line(line: str):
 
 # deferred: face_lines imports the helpers above
 from .face_lines import _FACE_LINE_PARSERS, _FaceState  # noqa: E402
+from ..cx_suspect import otherwise_without_roll as _otherwise_without_roll  # noqa: E402  ("Otherwise" after a condition)

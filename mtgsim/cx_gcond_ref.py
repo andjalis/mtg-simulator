@@ -37,9 +37,11 @@ def rule(pattern: str):
 
 
 def _refname(m) -> str:
-    """"spell" for "that spell", else "prev" (the generic referent binding; "it" would be stripped as the
-    legacy source-referent marker by cx_condlib.check)."""
-    return "spell" if m["ref"].lower() == "that spell" else "prev"
+    """"spell" for "that spell"; "prev" for "it" (which may also be the source itself: "When ~ dies, if it isn't
+    a token"); "that" for "that creature / card / permanent / land", which never names the source. ("it" itself
+    would be stripped as the legacy source-referent marker by cx_condlib.check.)"""
+    ref = (m["ref"] or "it").lower()
+    return {"that spell": "spell", "that card": "card", "it": "prev"}.get(ref, "that")
 
 
 def _op(d: str) -> str:
@@ -76,7 +78,8 @@ def _stat_vs_src(m):
     from .cx_condlib import _code
     w = (m["w"] or m["w2"]).lower()
     op = m["op"] or m["op2"]
-    return _code("ref_stat_vs", w, "<" if op.lower() == "less" else ">", "~", w, "prev")
+    ref = "prev" if m[0].lower().startswith(("its ", "it ")) else "that"
+    return _code("ref_stat_vs", w, "<" if op.lower() == "less" else ">", "~", w, ref)
 
 
 @rule(rf"{_REF} has (?P<op>greater|less) (?P<w1>power|toughness)(?: or (?P<w2>power|toughness))? than ~")
@@ -109,9 +112,10 @@ def _has_stat(m):
 def _stat_exact(m):
     """"its power is exactly 20" / "its power is greater than 0"."""
     from .cx_condlib import _code, _n
+    ref = "prev" if m[0].lower().startswith("its ") else "that"
     if m["n"]:
-        return _code("ref_stat", m["w"].lower(), "==", _n(m["n"]), "prev")
-    return _code("ref_stat", m["w"].lower(), ">" if m["d"].lower() == "greater" else "<", _n(m["n2"]), "prev")
+        return _code("ref_stat", m["w"].lower(), "==", _n(m["n"]), ref)
+    return _code("ref_stat", m["w"].lower(), ">" if m["d"].lower() == "greater" else "<", _n(m["n2"]), ref)
 
 
 @rule(rf"{_REF}(?:'s| is| isn't| is not| was| wasn't) (?P<not>not )?(?P<q>a|an) (?P<f>[\w ,/-]+)")
@@ -131,7 +135,8 @@ def _ref_is(m):
     if neg:
         codes = [_code("ref_not_is", spec, ref) for spec in specs]
         return _code("and", *codes) if len(codes) > 1 else codes[0]
-    codes = [_code("prev_is", spec) for spec in specs]
+    kind = "ref_card_is" if ref == "card" else "prev_is"
+    codes = [_code(kind, spec) for spec in specs]
     return _code("or", *codes) if len(codes) > 1 else codes[0]
 
 
@@ -143,12 +148,12 @@ def _ref_bare_adj(m):
     from .cx_condlib import _code, _filter
     if m["c1"]:
         colors = {"white": "W", "blue": "U", "black": "B", "red": "R", "green": "G"}
-        return _code("prev_is", {"any_color": [colors[m["c1"].lower()], colors[m["c2"].lower()]]})
+        return _code("ref_card_is" if _refname(m) == "card" else "prev_is", {"any_color": [colors[m["c1"].lower()], colors[m["c2"].lower()]]})
     spec = _filter(m["f"].lower(), plural=False)
-    return _code("prev_is", spec) if spec else ""
+    return _code("ref_card_is" if _refname(m) == "card" else "prev_is", spec) if spec else ""
 
 
-@rule(rf"{_REF} (?:has|had) (?P<q>no|a|an|one|one or more|{_NUM} or more|{_NUM}) "
+@rule(rf"(?P<ref>it|that creature|that permanent) (?:has|had) (?P<q>no|a|an|one|one or more|{_NUM} or more|{_NUM}) "
       rf"(?P<c>\+1/\+1|-1/-1|\+1/\+0|[a-z]+) counters? on it")
 def _ref_counters(m):
     """"it had no counters on it" / "that creature has three or more +1/+0 counters on it"."""
@@ -160,12 +165,13 @@ def _ref_counters(m):
     return _code("prev_is", {"counters": [m["c"].lower(), op, n]})
 
 
-@rule(rf"{_REF} (?:has|had) (?P<q>no |a |an |one )?counters? on it")
+@rule(r"(?P<ref>it|that creature|that permanent) (?:has|had) (?P<q>no |a |an |one )?counters? on it")
 def _ref_any_counters(m):
-    """"it had a counter on it" / "it had counters on it": any counter at all."""
+    """"it had a counter on it" / "it has no counters on it": any counter at all, read as the library's
+    any_counters (the previous effect's object, then the trigger's object, then ~)."""
     from .cx_condlib import _code
-    op, n = ("==", 0) if m["q"] and m["q"].startswith("no") else (">=", 1)
-    return _code("ref_any_counters", op, n, _refname(m))
+    code = _code("any_counters", "it")
+    return "!" + code if m["q"] and m["q"].startswith("no") else code
 
 
 @rule(r"(?P<ref>that card|it|that creature|that permanent)(?:'s| is) (?P<z>on the battlefield|exiled|in your hand|"
@@ -173,10 +179,10 @@ def _ref_any_counters(m):
 def _ref_zone(m):
     """"that card is exiled" / "that card is on the battlefield": which zone the referent card is in now."""
     from .cx_condlib import _code
-    return _code("ref_zone", m["z"].lower(), "card" if m["ref"].lower().startswith("that card") else "prev")
+    return _code("ref_zone", m["z"].lower(), _refname(m))
 
 
-@rule(r"(?P<ref>it|that creature|that permanent) (?:is|was) enchanted or equipped")
+@rule(r"(?P<ref>it|that creature|that permanent) is enchanted or equipped")   # not "was": no LKI of attachments
 def _ref_ench_equip(m):
     from .cx_condlib import _code
     return _code("or", _code("prev_is", {"state": "enchanted"}), _code("prev_is", {"state": "equipped"}))
@@ -191,46 +197,33 @@ def _ref_flag(m):
 
 @rule(r"(?P<ref>that creature|that permanent|it) is another (?P<f>[\w -]+)")
 def _ref_another(m):
-    """"that creature is another Hero": the referent has that type/subtype too."""
+    """"that creature is another Hero": the referent has that type/subtype too and isn't ~ itself (Wakandan
+    Royal Guard can target itself)."""
     from .cx_condlib import _code
     specs = _specs(m["f"])
-    return _code("prev_is", specs[0]) if specs and len(specs) == 1 else ""
-
-
-@rule(r"(?P<ref>it|that spell) has (?:a single|one) targets?")
-def _single_target(m):
-    """"if it has a single target": the referent spell/ability has exactly one chosen target."""
-    from .cx_condlib import _code
-    return _code("ref_target_count", "==", 1, _refname(m))
-
-
-@rule(r"(?P<ref>it|that spell) targets (?P<f>[\w ,/-]+)")
-def _targets(m):
-    """"if it targets a blue permanent": one of the referent spell's chosen targets matches the noun
-    phrase. Controller selectors ("you control"), players and counts stay unread."""
-    from .cx_condlib import _code
-    f = re.sub(r"^(?:a|an) ", "", m["f"].strip(), flags=re.I)
-    if re.search(_NOT_A_FILTER, f, re.I) or re.search(r"(?i)\b(?:you|your|their|them|only|one or more|two)\b", f):
-        return ""
-    specs = _specs(f)
-    if not specs:
-        return ""
-    codes = [_code("ref_targets", spec, _refname(m)) for spec in specs]
-    return _code("or", *codes) if len(codes) > 1 else codes[0]
+    return _code("and", _code("prev_is", specs[0]), _code("ref_not_src", "that")) \
+        if specs and len(specs) == 1 else ""
 
 
 # ---------------------------------------------------------------------------
 # Evaluation
 # ---------------------------------------------------------------------------
 
-KINDS = {"ref_stat", "ref_stat_vs", "ref_not_is", "ref_flag", "ref_zone", "ref_any_counters",
-         "ref_targets", "ref_target_count"}
+KINDS = {"ref_stat", "ref_stat_vs", "ref_not_is", "ref_flag", "ref_zone", "ref_not_src", "ref_card_is"}
 
 
 def _ref_obj(item, source, prev, ref):
     """The bound referent: a targeted/trigger object, else the item's context, else the card the previous
-    effect moved or revealed, else the source. "spell" only ever binds a StackItem."""
+    effect moved or revealed, else (for "it" only) the source. "spell" only ever binds a StackItem; "that
+    creature / card / ..." never falls back to the source (#356: no guessed referents)."""
     from .engine.state import Permanent, StackItem
+    if ref == "card":
+        # "that card": the one card the previous effect moved or revealed (referent.remember_card), never a guess
+        for attr in ("referent_card", "exiled_card", "moved_card", "link_card"):
+            card = getattr(item, attr, None) if item is not None else None
+            if card is not None:
+                return card
+        return None
     cands = [prev, getattr(item, "context", None) if item is not None else None]
     if ref == "spell":
         for o in cands:
@@ -248,7 +241,7 @@ def _ref_obj(item, source, prev, ref):
         card = getattr(item, attr, None) if item is not None else None
         if card is not None:
             return card
-    return source
+    return source if ref == "prev" else None
 
 
 def _stat(obj, what: str, item=None) -> int:
@@ -312,51 +305,10 @@ def check(game, p, kind, args, item=None, source=None, prev=None):
         if zone == "in your hand":
             return obj in p.hand
         return any(obj in pl.graveyard for pl in game.players)
-    if kind == "ref_any_counters":
-        from .engine.state import Permanent
-        op, n, ref = args
-        obj = _ref_obj(item, source, prev, ref)
-        if not isinstance(obj, Permanent):
-            return False
-        return _cmp(1 if any(v > 0 for v in obj.counters.values()) else 0, op, n)
-    if kind in ("ref_targets", "ref_target_count"):
-        from .engine.state import StackItem
-        if kind == "ref_targets":
-            spec, ref = args
-            obj = _ref_obj(item, source, prev, ref)
-            return isinstance(obj, StackItem) and any(
-                _target_ok(t, spec) for t in obj.targets if t is not None)
-        op, n, ref = args
-        obj = _ref_obj(item, source, prev, ref)
-        return isinstance(obj, StackItem) and _cmp(
-            sum(1 for t in obj.targets if t is not None), op, n)
+    if kind == "ref_card_is":
+        card = _ref_obj(item, source, prev, "card")
+        return card is not None and hasattr(card, "types") and _card_ok(card, args[0])
+    if kind == "ref_not_src":
+        obj = _ref_obj(item, source, prev, args[0])
+        return obj is not None and obj is not source
     return None
-
-
-def _target_ok(t, spec) -> bool:
-    """A chosen target of the referent spell matches the noun-phrase spec: "spell" only matches a
-    StackItem target, "card" only a card in a zone, the rest the target's card (and the permanent's
-    own state, for "tapped" and friends)."""
-    from .engine.state import Permanent, Player, StackItem
-    from .cx_condlib import _card_ok
-    if isinstance(t, Player):
-        return False
-    is_spell = isinstance(t, StackItem)
-    card = t.card if isinstance(t, (Permanent, StackItem)) else t
-    if card is None or not hasattr(card, "types"):
-        return False
-    spec = dict(spec)
-    types = list(spec.get("types", ()))
-    if "spell" in types:
-        if not is_spell:
-            return False
-        types.remove("spell")
-    if "card" in types:
-        if isinstance(t, (Permanent, StackItem)):
-            return False
-        types.remove("card")
-    if types:
-        spec["types"] = types
-    else:
-        spec.pop("types", None)
-    return _card_ok(card, spec, t if isinstance(t, Permanent) else None)

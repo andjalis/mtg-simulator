@@ -49,3 +49,25 @@ def parse_otherwise(sentence: str, effects: list) -> bool:
     cond = effects[-1].cond
     effects.extend(dataclasses.replace(e, cond=_code("not", cond)) for e in new)
     return True
+
+
+def otherwise_without_roll(sentence: str, effects: list, first: int) -> None:
+    """The dungeon template reads "Otherwise, put a +1/+1 counter on ~" as the other faces of a die roll
+    (Poultrygeist). With no die roll before it and a cx_condlib condition gating the effect just before
+    ("put a +1/+1 counter on that creature if its power is less than ~'s power. Otherwise, ..."), it is that
+    condition's other branch instead, as parse_otherwise reads it."""
+    import re
+    import dataclasses
+    if first == 0 or len(effects) != first + 1 or not re.fullmatch(r"otherwise, .+", sentence.strip(), re.I):
+        return
+    eff, before = effects[first], effects[first - 1]
+    cond = before.cond
+    if eff.kind != "die_check" or not cond.startswith("lib:") or "instead_gate" in before.data \
+            or any(e.kind == "die_roll" for e in effects[:first]):
+        return
+    # decided once, before either branch runs: a counter on "that creature" mustn't flip the comparison
+    gate = {"cond": cond}
+    effects[first - 1] = dataclasses.replace(before, cond="", data=dict(before.data, instead_gate=gate,
+                                                                        instead_branch=True))
+    effects[first:] = [dataclasses.replace(e, data=dict(e.data, instead_gate=gate, instead_branch=False))
+                       for e in eff.data["then"]]

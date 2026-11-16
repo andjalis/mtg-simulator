@@ -417,6 +417,8 @@ def resolve(game, p, eff, target, item):
                 c.cmc > n if op == "greater than" else c.cmc <= n
         return True
 
+    from .referent import remember_card
+    remember_card(item, None)
     for who in _searchers(game, p, eff, target, item):
         lib = who.library
         yard = who.graveyard if d.get("graveyard") else None     # "search your library and/or graveyard"
@@ -447,6 +449,8 @@ def resolve(game, p, eff, target, item):
                     searched = True
                     game.log(f"searches for {card.name}", who)
                 moves.append((card, dest, tapped, counters))
+        if eff.amount == 1 and len(moves) == 1 and not d.get("all") and not d.get("x_count"):
+            remember_card(item, moves[0][0])     # "Search for a creature card ... If that card is legendary, ..."
         if d.get("shuffle") == "before":
             lib.shuffle(game.rng)
         for card, dest, tapped, counters in reversed(moves) if plan[0][0] == "top" else moves:

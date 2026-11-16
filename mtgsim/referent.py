@@ -63,6 +63,7 @@ def _base(stat):
 def remember_card(item, card):
     """Freeze characteristics before moving a card, including before it becomes a permanent."""
     if item is not None:
+        item.referent_card = card        # "If that card is legendary, ..." (cx_gcond_ref, #405)
         item.referent_card_stats = ({"power": card.power or 0, "toughness": card.toughness or 0,
                                      "mana value": card.cmc} if card is not None else None)
 
