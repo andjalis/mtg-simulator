@@ -1227,7 +1227,8 @@ def check(game, p, code: str, item=None, source=None, prev=None):
         pl = _player_for(game, p, who, item)
         if pl is None:
             return False
-        value = pl.life if what == "life" else len(pl.hand) if what == "hand" else pl.counters.get("poison", 0)
+        value = pl.life if what == "life" else len(pl.hand) if what == "hand" else \
+            len(pl.library) if what == "library" else pl.counters.get("poison", 0)     # library: cx_library_conds
         return _cmp(value, op, n)
     if kind == "life_vs_opp":
         return _cmp(p.life, args[0], game.opponent(p).life)
@@ -1582,3 +1583,7 @@ def _spell_ok(spell, spec) -> bool:
             if value is None or not _cmp(int(value or 0), *want):
                 return False
     return _card_ok(card, spec) if spec else True
+
+
+from . import cx_library_conds  # noqa: E402  more rules: library size, exact hand size (#629)
+_EXTRA_RULES = (cx_library_conds,)
