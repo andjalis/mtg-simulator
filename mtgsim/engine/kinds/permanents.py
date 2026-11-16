@@ -686,3 +686,10 @@ def champion(game, p, eff, item, **_):
     """Champion (CR 702.72): mtgsim.champion."""
     from ...champion import resolve
     resolve(game, p, eff, item)
+
+
+@kind("target_ban_temp")
+def target_ban_temp(game, p, eff, target, **_):
+    """"Target creature / creatures you control can't be the target(s) of ... this turn" (target_bans, #643)."""
+    from ...target_bans import apply_temp
+    apply_temp(game, p, eff, target)

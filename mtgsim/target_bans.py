@@ -144,6 +144,10 @@ def _rules(game, perm):
     from .permanent_templates import matches
     from .residual_templates import sources
     out = []
+    turn = getattr(game, "turn", None)
+    for when, found in getattr(perm, "temp_target_bans", ()):
+        if when == turn:
+            out += list(found)
     if not perm.abilities_suppressed:
         out += list(perm.card.advanced_rules.get("target_ban", ()))
     for att in list(perm.auras) + list(perm.equipment):
@@ -166,3 +170,50 @@ def banned(game, perm, by, source) -> bool:
     if is_spell is None:
         return False
     return any(_hits(c, is_spell, card, by, perm.controller) for c in rules)
+
+
+# ------------------------------------------------------------------ "... this turn" (#643)
+#   Target creature can't be the target of spells or abilities your opponents control this turn.   (Vines of Vastwood)
+#   Creatures / Permanents you control can't be the targets of <what> this turn.   (Veilstone Amulet, Display of Dominance)
+# A ``target_ban_temp`` Effect: the clauses go on the target (or on each permanent of the group as the effect resolves,
+# CR 611.2c) for this turn, and ``_rules`` reads them while game.turn is that turn.
+
+def _temp(target, group, what):
+    from .cards import Effect, NO_MATCH
+    found = clauses(what)
+    if found is None:
+        return NO_MATCH                 # an unread quality: the line stays ignored
+    return Effect("target_ban_temp", target=target.lower(), data={"clauses": found, "group": group.lower()})
+
+
+EFFECT_PATTERNS = [
+    (r"target (creature|permanent) can't be the target of (.+?) this turn",
+     lambda m: _temp(m[1], "", m[2])),
+    (r"(creatures|permanents) you control can't be the targets of (.+?) this turn",
+     lambda m: _temp("none", m[1], m[2])),
+]
+
+
+def apply_temp(game, p, eff, target):
+    """Resolve a target_ban_temp Effect."""
+    from .engine.state import Permanent
+    if eff.data.get("group"):
+        group = [x for x in p.battlefield if eff.data["group"] == "permanents" or x.is_creature]
+    else:
+        group = [target] if isinstance(target, Permanent) and target in target.controller.battlefield else []
+    for x in group:
+        x.temp_target_bans = [b for b in getattr(x, "temp_target_bans", []) if b[0] == game.turn] + \
+            [(game.turn, eff.data["clauses"])]
+    if group:
+        game.log(f"{', '.join(x.card.name for x in group)} can't be targeted by those this turn", p)
+
+
+def stops(card, item, me) -> bool:
+    """HeuristicAI: whether casting ``card`` (a target_ban_temp spell) makes item's targeting of my permanent illegal."""
+    is_spell = item.kind == "spell" and item.card is not None
+    src = item.card if is_spell else getattr(getattr(item, "source", None), "card", None)
+    for e in card.spell_effects:
+        if e.kind == "target_ban_temp" and not e.data.get("group"):
+            if any(_hits(c, is_spell, src, item.controller, me) for c in e.data["clauses"]):
+                return True
+    return False

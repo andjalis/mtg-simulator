@@ -241,7 +241,8 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
             theirs = [x for x in theirs if x.toughness <= eff.amount2]
         theirs = [x for x in theirs if not (k == "destroy" and x.has("indestructible"))]
         return max(theirs, key=perm_value, default=None)
-    if k in ("pump", "p1_counters", "double_power", "grant", "explore", "attach_self", "force_blocked", "inherit_counters"):
+    if k in ("pump", "p1_counters", "double_power", "grant", "explore", "attach_self", "force_blocked", "inherit_counters",
+             "target_ban_temp"):
         return max(mine, key=perm_value, default=None)
     if k in ("oring", "blink_link_exile"):     # O-Ring style "exile target ... until/when ~ leaves" (#358)
         return max(theirs, key=perm_value, default=None)
