@@ -90,6 +90,10 @@ def quantity(text: str):
         return ("cxq", "excess")            # the excess damage this resolution dealt (rule 120.4a, #560)
     if low == "the number of opponents you have":
         return ("cxq", "opponents")
+    m = re.fullmatch(r"the number of (experience|poison|energy) counters (you have|your opponents have|"
+                     r"each opponent has|an opponent has)", low)
+    if m:       # player counters (#629): yours, or the opponents' total
+        return ("cxq", "pcounters", m[1], "you" if m[2] == "you have" else "opps")
     if low in ("the number of colors of mana spent to cast ~", "the number of colors of mana spent to cast this spell"):
         return ("cxq", "converge")
     m = re.fullmatch(r"the (?:number|amount) of mana from (.+?) (?:that was )?spent to cast (?:~|this spell|it)", low)
@@ -244,6 +248,9 @@ def value(game, p, spec, item, prev) -> int:
         return _devotion(p, spec[2])
     if kind == "opponents":
         return sum(1 for pl in game.players if pl is not p and not pl.lost)
+    if kind == "pcounters":
+        players = [p] if spec[3] == "you" else [pl for pl in game.players if pl is not p]
+        return sum(pl.counters.get(spec[2], 0) for pl in players)
     if kind == "converge":
         # a spell's own payment, or the spell a permanent resolved from (recorded as it entered)
         if item is not None and getattr(item, "is_spell", False):

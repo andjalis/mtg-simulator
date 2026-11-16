@@ -202,7 +202,7 @@ def pay_gate(game, p, eff, item, **_):
 def job_select(game, p, item, **_):
     src = item.source if item is not None else None
     hero = game.enter_battlefield(p, dataclasses.replace(make_token("Hero", 1, 1), subtypes=frozenset({"Hero"})))
-    if src is not None and src in p.battlefield and src.card.equip_cost is not None:
+    if src is not None and src in p.battlefield and (src.card.equip_cost is not None or "Equipment" in src.card.subtypes):     # non-mana equip too (#828)
         src.attached_to = hero
         game.log(f"{src.card.name} attaches to the Hero", p)
 

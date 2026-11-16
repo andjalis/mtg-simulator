@@ -1096,6 +1096,9 @@ def _face_keyword_ability_lines(st, line):
         from .. import champion as _champion
         if _champion.parse_line(line, st):      # "Champion an Elf" (#646)
             return None
+        from .. import evoke_costs as _evoke_costs
+        if _evoke_costs.parse_line(line, st):           # "Evoke—Exile a white card from your hand." (#646)
+            return None
         from .. import morph_costs as _morph_costs
         if _morph_costs.parse_line(line, st):           # "Morph—Reveal a black card in your hand." (#646)
             return None
