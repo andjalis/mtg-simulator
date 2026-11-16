@@ -139,10 +139,33 @@ def _gives_protection(card: CardDef) -> bool:
     return any(e.kind == "grant" and (e.data or {}).get("keyword") == protection.CHOICE for e in card.spell_effects)
 
 
+def _protection_answer(card: CardDef, source):
+    """The targeted protection grant in card that makes source an illegal source for the thing it targets, or None:
+    "protection from the color of your choice" or "from each color" against a coloured source, "... from artifacts or
+    from the color of your choice" against an artifact source too (Apostle's Blessing, Razor Barrier, Eldritch
+    Immunity; #835)."""
+    if source is None:
+        return None
+    for e in card.spell_effects:
+        kw = (e.data or {}).get("keyword") or ""
+        if e.kind != "grant" or e.target not in ("creature_mine", "creature", "permanent", "permanent_mine"):
+            continue
+        choice = kw.startswith(protection.CHOICE)
+        if (choice or kw == "protection from each color") and source.colors:
+            return e
+        if choice and "artifacts" in kw.split("|")[1:] and source.is_artifact:
+            return e
+    return None
+
+
 def _is_trick(card: CardDef) -> bool:
     """Instant pumps and protection spells: kept for combat and for answering removal."""
     return card.instant_speed and not card.is_permanent and (
-        _boost(card) is not None or _gives_hexproof(card) or _gives_protection(card))
+        _boost(card) is not None or _gives_hexproof(card) or _gives_protection(card) or
+        any(e.kind == "target_ban_temp" and not e.data.get("group") for e in card.spell_effects) or   # (#643)
+        any(e.kind == "grant" and (str((e.data or {}).get("keyword") or "").startswith(protection.CHOICE) or
+                                   (e.data or {}).get("keyword") == "protection from each color")
+            for e in card.spell_effects))           # protection grants: kept to answer removal (#835)
 
 
 def _aim(card: CardDef, eff, target) -> list:
@@ -1581,10 +1604,15 @@ class HeuristicAI:
             source = item.card or (item.source.card if item.source is not None else None)
             for card in options:
                 boost = _boost(card)
-                if _gives_hexproof(card) or _gives_protection(card) and source is not None and source.colors:
+                from .target_bans import stops as ban_stops          # Vines of Vastwood (#643)
+                if _gives_hexproof(card) or _gives_protection(card) and source is not None and source.colors or \
+                        ban_stops(card, item, me):
                     first = next((e for e in card.spell_effects if e.target in ("creature_mine", "creature")), None)
                     if first is not None:
                         return card, _aim(card, first, tgt)
+                answer = _protection_answer(card, source)       # protection that makes the source illegal (#835)
+                if answer is not None:
+                    return card, _aim(card, answer, tgt)
                 if lethal_damage and boost and tgt.toughness - tgt.damage + boost[2] > eff.amount:
                     return card, _aim(card, boost[0], tgt)
         return None

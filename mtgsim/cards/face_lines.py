@@ -1093,6 +1093,12 @@ def _face_keyword_ability_lines(st, line):
                                 "basic" if kind == "basic landcycling" else "any" if kind == "landcycling" else
                                 m[1][:-7]}
             return None
+        from .. import protection_qualities as _protection_qualities
+        if _protection_qualities.parse_line(line, st):  # "Protection from mana value 3 or greater" (#643)
+            return None
+        from .. import target_bans as _target_bans
+        if _target_bans.parse_line(line, st):           # "~ can't be the target of abilities your opponents control." (#643)
+            return None
         from .. import champion as _champion
         if _champion.parse_line(line, st):      # "Champion an Elf" (#646)
             return None
