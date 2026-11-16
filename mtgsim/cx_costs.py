@@ -34,6 +34,7 @@ _RULES = [
 
 def parse_part(part: str, extra: dict) -> bool:
     from .cx_condlib import _filter
+    part = re.sub(r"(Tap (?:a|an|one|two|three|four|another) untapped [\w -]+?) and/or ([\w -]+? you control)", r"\1 or \2", part)
     for kind, rx in _RULES:
         m = rx.fullmatch(part)
         if not m:

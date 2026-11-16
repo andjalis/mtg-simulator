@@ -138,6 +138,7 @@ def host_phase(game, p, event) -> None:
 
     "That player" is p; "that creature / land / artifact" (parsed as the previous target) is the enchanted permanent."""
     import dataclasses
+    from .batch1_templates import is_host_kind
     want = "host_upkeep" if event == "upkeep" else "host_end_step"
     for pl in game.players:
         for aura in list(pl.battlefield):
@@ -145,7 +146,8 @@ def host_phase(game, p, event) -> None:
             if host is None or host.controller is not p:
                 continue
             for trig in aura.card.triggers:
-                if trig.event == want:
+                if trig.event == want and not (want == "host_upkeep" and is_host_kind(trig)):
+                    # batch1_templates.on_upkeep queues its own host_* kinds; one dispatcher per trigger (#714)
                     effects = [dataclasses.replace(e, target="host") if e.target == "prev" else e for e in trig.effects]
                     game.queue_trigger(aura.controller, effects, aura, aura.card.name, context=p)
 

@@ -135,13 +135,34 @@ def parse_line(line: str, extra: dict, types) -> bool:
     return False
 
 
-def finish(extra: dict):
+def finish(extra: dict, triggers=()):
     """After all lines are parsed: is the Aura hostile (put on the opponent's creature)?"""
     gated = extra.pop("gate_hostile", False)        # a debuff read by cx_static_gate
     if extra.get("aura"):
         b = extra.get("equip_bonus", (0, 0))
         extra["aura_hostile"] = bool(extra.get("aura_flags")) or b[0] < 0 or b[1] < 0 or \
-            extra["aura"] in ("creature an opponent controls", "player") or gated
+            extra["aura"] in ("creature an opponent controls", "player") or gated or _punisher(extra, triggers)
+
+
+def _punisher(extra: dict, triggers) -> bool:
+    """An Aura whose only abilities hurt the enchanted permanent's controller (#722): "At the beginning of the upkeep
+    of enchanted land's controller, ~ deals 1 damage to that player" (Cursed Land, Feedback, Power Taint), "Whenever
+    enchanted land becomes tapped, ~ deals 2 damage to that land's controller / destroy it" (Psychic Venom, Spreading
+    Algae). A static bonus or keyword it gives, or any other kind of trigger, keeps it friendly."""
+    if any(extra.get(k) for k in ("equip_bonus", "equip_keywords", "equip_ward")) or not triggers:
+        return False
+    harms = False
+    for t in triggers:
+        host = t.event == "host_upkeep" or t.event.startswith("ev:") and "enchanted" in (t.filter or "")
+        for e in t.effects:
+            if host and (e.kind in ("damage", "lose_life") and e.target == "that_player"
+                         or e.kind == "cx_damage" and e.data.get("who") == "controller" and e.target == "none"
+                         or e.kind == "destroy" and e.target == "prev"):
+                harms = True
+            elif not (e.kind in ("cx_unless", "pay_gate") or e.kind == "add_counter" and e.target == "self"
+                      or t.event == "dies" and e.kind == "bounce"):     # Spreading Algae returns to hand
+                return False        # anything else (a counter on the host, a draw, a pump ...) isn't plainly harmful
+    return harms
 
 
 EFFECT_PATTERNS = wordings.patterns("auras") + [

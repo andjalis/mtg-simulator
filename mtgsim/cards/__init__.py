@@ -257,6 +257,8 @@ from .. import card_referent as _card_referent
 _EFFECT_PATTERNS += _card_referent.EFFECT_PATTERNS
 from .. import cx_attach as _cx_attach
 _EFFECT_PATTERNS += _cx_attach.EFFECT_PATTERNS
+from .. import cx_replace_amounts as _cx_replace_amounts       # counter-amount replacements (#407)
+_parse_module._FACE_LINE_PARSERS = (_cx_replace_amounts.face_line,) + _parse_module._FACE_LINE_PARSERS
 from .. import cx_static_cost as _cx_static_cost  # one-shot spell-group discounts (#341)
 _EFFECT_PATTERNS += _cx_static_cost.EFFECT_PATTERNS
 from .. import cx_exile_play as _cx_exile_play          # "exile the top card of that player's library" (#316)
@@ -269,5 +271,15 @@ _SUBS += _cx_spent.SUBS
 from .. import cx_trig_attach as _cx_trig_attach  # noqa: E402
 _TRIGGERS += _cx_trig_attach.TRIGGERS
 _EFFECT_PATTERNS += _cx_trig_attach.EFFECT_PATTERNS
+from .. import protection_types as _protection_types  # noqa: E402
+KEYWORDS.update(_protection_types.KEYWORDS)
 from .. import bounce_own as _bounce_own  # noqa: E402
 _EFFECT_PATTERNS += _bounce_own.EFFECT_PATTERNS
+from .. import zone_exile as _zone_exile  # noqa: E402
+_EFFECT_PATTERNS += _zone_exile.EFFECT_PATTERNS
+from .. import give_control as _give_control  # noqa: E402
+_EFFECT_PATTERNS += _give_control.EFFECT_PATTERNS
+from .. import free_cast as _free_cast  # noqa: E402  "cast a spell from your hand without paying its mana cost" (#625)
+_EFFECT_PATTERNS += _free_cast.EFFECT_PATTERNS
+from .. import cx_dmg_equal as _cx_dmg_equal  # noqa: E402  damage equal to a quantity (#626)
+_EFFECT_PATTERNS += _cx_dmg_equal.EFFECT_PATTERNS

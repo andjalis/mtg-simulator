@@ -10,9 +10,17 @@ def temp_keywords(game, target, eff, **_):
 
 
 @kind("cx_lose_kw")
-def lose_keyword(game, target, eff, **_):
+def lose_keyword(game, target, eff, p=None, **_):
     if isinstance(target, Permanent):
-        game.add_continuous_effect(target, "remove", keyword=eff.data["keyword"], until_eot=True)
+        keyword = eff.data["keyword"]
+        if keyword.startswith("choice:"):       # "loses your choice of A, B, or C" (cx_grammar_choice)
+            from .stats import _KEYWORD_RANK
+            options = keyword[7:].split("|")
+            theirs = target.controller is not p
+            # an opponent's creature loses the best one it has; your own, one it doesn't have
+            keyword = min(options, key=lambda k: (target.has(k) != theirs, _KEYWORD_RANK.get(k, 20)))
+            game.log(f"{target.card.name} loses {keyword}", p)
+        game.add_continuous_effect(target, "remove", keyword=keyword, until_eot=True)
 
 
 @kind("cx_set_base")

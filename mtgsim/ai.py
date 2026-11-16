@@ -147,6 +147,7 @@ def _aim(card: CardDef, eff, target) -> list:
 # Effects plan_spell values through _extra_value.
 EXTRA_KINDS = {"reanimate_total", "reanimate_one", "tutor_gy", "regrow_perm", "regrow_any", "tutor", "explore", "earthbend", "unblockable", "oring_all", "pump_all", "double_counters", "learn",
                "tap", "stun", "mill", "proliferate", "search_plan", "gy_move"} | copies.KINDS
+EXTRA_KINDS.add("hand_free_cast")     # free casts from hand (free_cast.py, #625)
 
 CARRIER_KINDS = ("pump", "grant", "p1_counters", "unblockable")   # aimed at the creature that attacks
 
@@ -731,8 +732,12 @@ class HeuristicAI:
     def play_land(self, game: Game, me: Player):
         from . import cx_top
         top = cx_top.top(me)
-        lands = ([top] if cx_top.land_ok(me, top) else []) + [c for c in me.hand if c.is_land]   # the top first
+        from .residual_templates import hand_locked
+        hand = [] if hand_locked(me) else [c for c in me.hand if c.is_land]     # Experimental Frenzy (#326)
+        lands = ([top] if cx_top.land_ok(me, top) else []) + hand   # the top first
         if me.land_played:
+            return
+        if not lands and hand_locked(me):
             return
         if not lands:
             card = HeuristicAI.mdfc_land(self, game, me)
@@ -837,7 +842,7 @@ class HeuristicAI:
                     + self._static_value(game, me, card) - self._sac_cost(game, me, card), None)
         instant = card.instant_speed
         if any('anchor' in e.data or e.kind in ('allocated_counter', 'return_tribal_grave', 'grave_library_top',
-                'control_permanent', 'cx_exchange', 'cx_attach', 'populate', 'advanced_quantity_stats', 'selected_mass_move', 'filtered_grave_return', 'graveyard_exile_all', 'graveyard_exile_choice') for e in card.spell_effects):
+                'control_permanent', 'cx_exchange', 'cx_attach', 'populate', 'advanced_quantity_stats', 'selected_mass_move', 'filtered_grave_return', 'graveyard_exile_all', 'graveyard_exile_choice', 'give_control_choice', 'give_control_all') for e in card.spell_effects):
             from .engine.policy import _mode_value
             with game.targeting(card):
                 value = _mode_value(game, me, card.spell_effects)
@@ -954,6 +959,9 @@ class HeuristicAI:
                 d = eff.data or {}
                 value += max(1, eff.amount) * (1.0 + (d.get("power", 0) + d.get("toughness", 0)) / 2
                                                if "power" in d else MINOR_EFFECTS["treasure"])
+            elif eff.kind == "cx_token" and eff.target == "none" and eff.data.get("who") in ("you", "each"):
+                targets.append(None)            # tokens you get (#329): how many now, times what each is worth
+                value += self._cx_token_value(game, me, card, eff)
             elif eff.kind == "p1_counters":
                 tgt = self.choose_target(game, me, eff) if eff.target in engine.TARGETED else None
                 if eff.target in engine.TARGETED and tgt is None:
@@ -985,6 +993,13 @@ class HeuristicAI:
                     return None
                 targets.append(tgt)
                 value += 1.0
+            elif eff.kind == "divided_damage":     # the division itself is planned as it goes on the stack
+                from .cx_damage import ai_worth
+                v = ai_worth(self, game, me, eff, card, instant)
+                if v is None:
+                    return None
+                targets.append(None)
+                value += v
             elif eff.kind == "add_mana":
                 targets.append(None)      # value already counted once by _mana_spell_value
             else:
@@ -999,6 +1014,22 @@ class HeuristicAI:
             if targets is None:
                 return None
         return (value - self._sac_cost(game, me, card), targets)
+
+    @staticmethod
+    def _cx_token_value(game: Game, me: Player, card: CardDef, eff: Effect) -> float:
+        """What a cx_token effect's tokens are worth to me: the count it makes now ("for each ..." read as it stands,
+        an event's "that many" as 1) times 1 + average body, or a Treasure-like artifact's minor value."""
+        from types import SimpleNamespace
+        d = eff.data
+        n = max(1, eff.amount)
+        if d.get("xq"):
+            n *= game.x_quantity(me, d["xq"], SimpleNamespace(source=None, card=card, context=None, x=0), None)
+        elif d.get("per_opponent"):
+            n *= max(1, len(game.players) - 1)
+        tok = d.get("card")
+        each = 1.0 + ((tok.power or 0) + (tok.toughness or 0)) / 2 if tok is not None and tok.is_creature \
+            else MINOR_EFFECTS["treasure"]
+        return n * each
 
     def _mana_spell_value(self, game: Game, me: Player, card: CardDef) -> float:
         """A spell that only adds mana ("ritual"): worth casting when the mana it would make brings a
@@ -1182,6 +1213,9 @@ class HeuristicAI:
             return None, _gy_move_value(me, eff, pending) if mine else 0.0
         if k == "tutor":
             return None, 2.0      # the best card of a kind, from the library
+        if k == "hand_free_cast":   # "you may cast a <kind> spell from your hand without paying its mana cost" (#625)
+            from .free_cast import value as free_value
+            return None, free_value(me, eff, card)
         if k == "search_plan":
             v = search_counted.value(game, me, eff)       # "target player searches": that's us
             return (me if eff.target == "player" else None, v) if v > 0 else None

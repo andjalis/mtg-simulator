@@ -72,6 +72,15 @@ class PilotGateTests(unittest.TestCase):
         self.assertEqual(len(suspicious({"cond": 'lib:["prev_is",{"legendary":true}'})), 1)     # broken JSON
         self.assertEqual(len(suspicious({"cond": 'lib:["prev_is",{"f":"{unresolved}"}]'})), 1)  # placeholder inside
 
+    def test_negated_condlib_code_is_not_a_placeholder(self):
+        # PR #664: cx_links' "Otherwise" is an "and" of negated codes ("!lib:..."), handled by engine/stack.py
+        self.assertEqual(suspicious({"cond": '!lib:["ref_card",{"types":["land","card"]}]'}), [])
+        self.assertEqual(suspicious({"cond": 'lib:["and","!lib:[\\"ref_card\\",{\\"sub\\":[\\"Zombie\\"],'
+                                             '\\"types\\":[\\"card\\"]}]"]'}), [])
+        self.assertEqual(len(suspicious({"cond": '!foo:["ref_card"]'})), 1)                 # unknown negated prefix
+        self.assertEqual(len(suspicious({"cond": '!lib:["ref_card",{"types":["land"]}'})), 1)  # broken JSON
+        self.assertEqual(len(suspicious({"cond": '!lib:["prev_is",{"f":"{unresolved}"}]'})), 1)  # placeholder inside
+
     def test_untargeted_none_is_advisory(self):
         sample = {"name": "Innocent Blood", "flags": ["parse.spell_effects[0].target='none'"]}
         self.assertEqual(verdict({}, {}, [sample], self.smoke)[0], "PASS")

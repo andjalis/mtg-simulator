@@ -84,7 +84,8 @@ def populate(game, p, **_):
         if chosen not in tokens:
             return
         from ...backlog_templates import entry_batch
-        count = 2 ** sum(bool(x.card.token_double) for x in p.battlefield if not x.abilities_suppressed)
+        from ...cx_replace_amounts import token_multiplier
+        count = token_multiplier(game, p)         # doubling replacements (#407)
         with entry_batch(game):
             for _ in range(count):
                 game.enter_battlefield(p, make_copy(chosen.copiable_card, {}))

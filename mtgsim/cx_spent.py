@@ -77,3 +77,35 @@ def fitting_targets(game, me, eff, legal):
     fit = [x for x in legal if isinstance(x, Permanent)
            and (x.card.cmc if stat == "mana value" else getattr(x, stat, 0)) <= bound]
     return fit or legal
+
+
+# where spent mana came from ("mana from a Treasure", "from creatures", "from an artifact source", "from a Desert")
+SOURCE_KINDS = ("treasure", "artifact", "creature", "desert", "cave")
+
+
+def source_counts(payment) -> dict:
+    """{kind: mana} for the sources that paid a spell: each source's mana counts toward every kind it is (a Treasure
+    is also an artifact). Mana already floating in the pool has lost its source and counts toward none."""
+    from .engine.mana import _amount
+    from .engine.state import _POOL_MANA, FIREBEND_MANA
+    pool = {id(c) for c in _POOL_MANA.values()} | {id(FIREBEND_MANA)}
+    out = {}
+    for src in payment:
+        card = src.card
+        if id(card) in pool:        # floating mana (an artifact-typed stand-in card): its source is unknown
+            continue
+        kinds = {"treasure" if card.token_kind == "treasure" or "Treasure" in card.subtypes else "",
+                 "artifact" if "Artifact" in card.types else "", "creature" if src.is_creature else "",
+                 "desert" if "Desert" in card.subtypes else "", "cave" if "Cave" in card.subtypes else ""} - {""}
+        n = max(1, _amount(src))
+        for k in kinds:
+            out[k] = out.get(k, 0) + n
+    return out
+
+
+def source_kind(word: str):
+    """"a Treasure" / "Treasures" / "creatures" / "an artifact source" -> its key, or None."""
+    w = re.sub(r"^(?:an? )", "", word.strip().lower())
+    w = re.sub(r" sources?$", "", w)
+    w = w[:-1] if w.endswith("s") else w
+    return w if w in SOURCE_KINDS else None

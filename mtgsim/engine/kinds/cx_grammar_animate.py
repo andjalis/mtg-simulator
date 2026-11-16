@@ -7,12 +7,15 @@ _LAND_TYPES = {"Plains", "Island", "Swamp", "Mountain", "Forest", "Desert", "Gat
 
 
 @kind("cx_animate")
-def animate(game, p, eff, target, **_):
+def animate(game, p, eff, target, item=None, **_):
     from ...cards import Activated
     if not isinstance(target, Permanent) or target not in target.controller.battlefield:
         return
     d = eff.data
     eot = d["eot"]
+    if d.get("linked"):
+        _linked(game, p, eff, target, item)
+        return
     if d.get("subtypes_only"):
         _subtypes_only(game, target, d, eot)
         return
@@ -58,3 +61,34 @@ def _subtypes_only(game, target, d, eot):
         return
     kept = {s for s in target.card.subtypes if "creature" not in _SUBTYPE_TYPES.get(s.lower(), ("creature",))}
     game.add_continuous_effect(target, "set_subtypes", subtypes=new | kept, until_eot=eot)
+
+
+def _linked(game, p, eff, target, item):
+    """The animation tied to its source's "for as long as" duration (cx_statics._linked_animate): every change is a
+    continuous effect sourced from ~ (the P/T as layer-7b base P/T, not ``animated``), linked to the duration."""
+    from ...cx_statics import link_effect
+    from ...permanent_templates import _SUBTYPE_TYPES
+    d = eff.data
+    src = item.source if item is not None and isinstance(getattr(item, "source", None), Permanent) else None
+    if src is None or src not in src.controller.battlefield:
+        return
+
+    def add(op, **kw):
+        link_effect(game, game.add_continuous_effect(target, op, source=src, **kw), d["linked"], p)
+
+    types, subtypes = set(d["types"]), set(d["subtypes"])
+    if d.get("addition"):
+        add("add_types", types=types, subtypes=target.card.subtypes | subtypes)
+    else:
+        kept = {t.lower() for t in types & set(target.card.types)} - {"creature"}
+        subtypes |= {s for s in target.card.subtypes if kept & set(_SUBTYPE_TYPES.get(s.lower(), ()))}
+        keep = d.get("still")
+        if keep and keep in target.card.types:
+            types.add(keep)
+            subtypes |= {s for s in target.card.subtypes if keep != "Land" or s in _LAND_TYPES}
+        add("set_types", types=types, subtypes=subtypes)
+    if "pt" in d:
+        pt = (target.card.cmc, target.card.cmc) if d.get("pt_mv") else d["pt"]
+        add("set_base", power=pt[0], toughness=pt[1])
+    for kw in d.get("keywords", ()):
+        add("grant", keyword=kw)

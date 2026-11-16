@@ -154,6 +154,8 @@ def entry_batch(game):
         except BaseException:
             game._entry_batch = None
             raise
+        from .cx_replace_amounts import tokens_created     # "those tokens plus an additional ..." (#407)
+        tokens_created(game, list(events))
         game._entry_batch = None
         seen = set()
         for permanent in events:

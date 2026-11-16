@@ -68,6 +68,11 @@ def _group_clause(line):
         n = int(m[2]) if m[2].isdigit() else NUMBERS.get(m[2])
         if n is not None and line.endswith(m[1] + "."):
             return m[1], ("others", n)
+    m = re.fullmatch(r"~ can't (attack|block) alone unless (?:he|she|it) has (.+?) on (?:him|her|it)\.", line)
+    if m:                       # Pipsqueak: alone only while the condition holds (#518)
+        from .cx_condlib import as_static
+        code = as_static(f"~ has {m[2]} on it")
+        return (m[1], ("alone_unless", code)) if code else None
     m = re.fullmatch(r"~ can't (attack|block) unless a creature with greater power also (attacks|blocks)\.", line)
     if m and m[2] == m[1] + "s":
         return m[1], ("greater_power",)
@@ -106,6 +111,10 @@ def _group_ok(perm, group, action):
             continue
         if spec[0] == "alone" and others:
             return False
+        if spec[0] == "alone_unless" and not others:
+            from .cx_condlib import holds_for
+            if not holds_for(perm, spec[1]):
+                return False
         if spec[0] == "others" and len(others) < spec[1]:
             return False
         if spec[0] == "greater_power" and not any(c.power > perm.power for c in others):

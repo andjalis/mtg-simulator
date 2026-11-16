@@ -181,6 +181,8 @@ _SUBTYPE_TYPES.update({'ajani': ['planeswalker'],
  'zariel': ['planeswalker']})
 
 
+_OUTLAWS = ['assassin', 'mercenary', 'pirate', 'rogue', 'warlock']     # rule 700.12
+
 def keywords(text):
     from .cards.model import KEYWORDS
     parts = re.split(r',? and |, ', text.lower().strip())
@@ -195,6 +197,15 @@ def selector(text, *, plural=False):
         result['other'] = True
         text = text.split(' ', 1)[1]
     text = re.sub(r'^(?:a|an) ', '', text, flags=re.I)
+    # "creatures you control that entered this turn", "each creature that entered the battlefield under your control
+    # this turn" (#327): the permanents whose current object entered on this turn (Permanent.entered_turn)
+    # ("entered under your control" would need the controller it entered under, which isn't recorded: refused)
+    entered = re.search(r' that entered(?: the battlefield)?( under your control)? this turn$', text, re.I)
+    if entered:
+        if entered[1]:
+            return None
+        result['entered_turn'] = True
+        text = text[:entered.start()]
     # "target permanent other than ~" (#645): the source itself is excluded, like "another"
     other = re.search(r' other than (?:~|this (?:creature|permanent|artifact|enchantment|land))$', text, re.I)
     if other:
@@ -281,17 +292,21 @@ def selector(text, *, plural=False):
                 types.append(low)
             elif low in ('tapped', 'untapped', 'attacking', 'blocking', 'legendary', 'nonlegendary', 'token', 'nontoken',
                          'nonland', 'noncreature', 'nonartifact', 'colorless', 'multicolored', 'monocolored',
-                         'suspected', 'snow', 'nonsnow') or low.startswith('non') and low[3:] in _TYPES:
+                         'suspected', 'snow', 'nonsnow', 'face-up') or low.startswith('non') and low[3:] in _TYPES:
                 result.setdefault('traits', []).append(low)
             elif low in _COLORS:
                 result.setdefault('colors', []).append(_COLORS[low])
+            elif low in ('outlaw', 'outlaws'):      # rule 700.12: Assassins, Mercenaries, Pirates, Rogues, Warlocks
+                result.setdefault('any_subtypes', []).extend(_OUTLAWS)
+            elif low == 'non-outlaw':
+                result.setdefault('not_subtypes', []).extend(_OUTLAWS)
             elif low.startswith('non-') and low[4:] in _SUBTYPE_TYPES:
                 result.setdefault('not_subtypes', []).append(word[4:].lower())
             elif low in _SUBTYPE_TYPES:
                 result.setdefault('subtypes', []).append(low)
             else:
                 return None
-        if not types and not result.get('subtypes'):
+        if not types and not result.get('subtypes') and not result.get('any_subtypes'):
             return None
         if types:
             result['types_all'] = types
@@ -374,7 +389,13 @@ def matches(game, permanent, spec, controller, source=None):
         return False
     if any(s in subs or changeling and s in _CREATURE_SUBTYPES for s in spec.get('not_subtypes', [])):
         return False
+    if spec.get('any_subtypes') and not (subs & set(spec['any_subtypes']) or changeling):
+        return False
     if not all(c in permanent.card.colors for c in spec.get('colors', [])):
+        return False
+    if 'colors_any' in spec and not set(spec['colors_any']) & set(permanent.card.colors):       # "red or green"
+        return False
+    if set(spec.get('not_colors', ())) & set(permanent.card.colors):                            # "nonblack"
         return False
     for trait in spec.get('traits', []):
         if trait in ('tapped', 'untapped') and permanent.tapped != (trait == 'tapped'):
@@ -383,6 +404,8 @@ def matches(game, permanent, spec, controller, source=None):
             return False
         if trait in ('token', 'nontoken') and permanent.card.is_token != (trait == 'token'):
             return False
+        if trait == 'face-up' and getattr(permanent, 'hidden', None) is not None:
+            return False        # face down: manifested / morphed / disguised (Permanent.hidden) (#540)
         if trait.startswith('non') and trait[3:] in _TYPES and has_type(trait[3:]):
             return False
         if trait == 'colorless' and permanent.card.colors or trait == 'multicolored' and len(permanent.card.colors) < 2 or trait == 'monocolored' and len(permanent.card.colors) != 1:
@@ -403,6 +426,8 @@ def matches(game, permanent, spec, controller, source=None):
         name, present = spec['keyword']
         if permanent.has(name) != present:
             return False
+    if spec.get('entered_turn') and getattr(permanent, 'entered_turn', -1) != game.turn:
+        return False
     if spec.get('tough_gt_power') and not permanent.toughness > permanent.power:
         return False
     if 'stat' in spec:
@@ -531,6 +556,15 @@ def parse_line(line, st):
     if m and m[2].lower() not in ('+1/+1', '-1/-1') and not st.extra.get('etb_named_counters'):
         st.extra['etb_named_counters'] = (m[2].lower(), _num(m[1]))
         return True
+    # "Other creatures you control have ward {1}": a parameter the plain keyword grants can't carry; Permanent.ward
+    # reads advanced_rules["static_ward"] (selector, N) from every battlefield source.
+    m = re.fullmatch(r'((?:Other |All |Each )?[A-Za-z][^.{}"]*? you control(?: with [^.{}"]+?)?) (?:have|has) ward \{(\d+)\}\.', line)
+    if m:
+        spec = selector(re.sub(r'^(?:All|Each) ', '', m[1]), plural=True)
+        if spec is not None and 'keyword' not in spec and spec.get('counter', ('x',))[0] not in ('a', 'an', 'any'):
+            rules = st.extra.setdefault('advanced_rules', {})
+            rules['static_ward'] = rules.get('static_ward', ()) + ((spec, int(m[2])),)
+            return True
     # Static keyword grants reuse the same selectors as targeted operations.
     m = re.fullmatch(r'(.+?) (?:have|has) (.+)\.', line)
     if m:

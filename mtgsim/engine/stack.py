@@ -400,6 +400,7 @@ class StackMixin:
         item = self.stack.pop()
         p = item.controller
         self.last_dealt = 0          # "the damage dealt this way" only counts damage from this resolution
+        self.excess_dealt = 0        # "excess damage ... this way" (excess_damage.py) likewise
         if item.intervening_if and not self.check_cond(p, Effect("condition", cond=item.intervening_if), item, None):
             self.log(f"{item} does not resolve (intervening condition is false)", p)
             self.state_based_actions()
@@ -428,6 +429,7 @@ class StackMixin:
                     return
             self._entry_mana_colors = getattr(item, "mana_colors", set())
             self._entry_mana_by_color = getattr(item, "mana_by_color", {})
+            self._entry_mana_from = getattr(item, "mana_from", {})
             self._entry_cast = (kind == "kicker" or getattr(item, "kicks", 0) > 0,
                                 bool(getattr(item, "cast_from_hand", False)), getattr(item, "mana_spent", 0))
             if kind in ("disturb", "room_right", "siege"):   # cast transformed: its back face enters (a Room's right door)
@@ -445,6 +447,7 @@ class StackMixin:
                 perm.curse_target = self.opponent(p)
             self._entry_mana_colors = set()
             self._entry_mana_by_color = {}
+            self._entry_mana_from = {}
             self._spent = ""
             if kind in ("disguise", "morph", "megamorph"):
                 perm.hidden = base
@@ -510,6 +513,7 @@ class StackMixin:
             prev = item.context if item.kind == "trigger" and isinstance(item.context, Permanent) else None
             done: list = []
             instead_choices = {}
+            just_made = None    # the one token the effect just before created: "it" right after "Create a ... token"
             for i, (eff, tgt) in enumerate(zip(item.effects, item.targets)):   # "would die this turn" must precede the damage
                 if eff.kind == "exile_instead" and i and isinstance(item.targets[i - 1], Permanent):
                     item.targets[i - 1].exile_turn = self.turn
@@ -527,7 +531,7 @@ class StackMixin:
                     if isinstance(tgt, StackItem):
                         item.target_spell = tgt        # "that spell" still names it after a later target
                 elif eff.target == "prev":
-                    tgt = prev
+                    tgt = just_made if just_made is not None else prev
                 if eff.data.get("distinct") and any(t is tgt for e2, t in zip(item.effects, item.targets)
                                                     if e2 is not eff and e2.data.get("distinct") and e2.kind == eff.kind
                                                     and e2 in done):
@@ -547,7 +551,16 @@ class StackMixin:
                     continue
                 if eff.data.get("may_hostile") and not self.hostile_target(p, tgt):
                     continue                  # "you may ...": declined unless it hits the opponent
-                self.resolve(p, eff, tgt, item, prev)
+                # CR 704.3: state-based actions wait until the whole item has resolved (checked below), so a 0/0
+                # token gets the counters the next effect puts on it (Wild Hypothesis, #682)
+                self._mid_resolution = getattr(self, "_mid_resolution", 0) + 1
+                serial = getattr(self, "_token_serial", 0)
+                item.created_token = just_made
+                try:
+                    self.resolve(p, eff, tgt, item, prev)
+                finally:
+                    self._mid_resolution -= 1
+                just_made = self._last_token if getattr(self, "_token_serial", 0) == serial + 1 else None
                 if self.over:
                     break
         if item.kind == "chapter":
@@ -611,6 +624,8 @@ class StackMixin:
         c = eff.cond
         if not c:
             return True
+        if c == "your_turn":        # "if it's (not) your turn" (cx_condlib aliases; "!your_turn" negates below, #721)
+            return self.active is p
         if c == 'attacking_most_life':
             return counter_mechanics.is_attacking_most_life(self, item.source if item else None, p)
         phase_condition = phase_conditions.check(p, c, item)

@@ -253,10 +253,17 @@ def parse_line(line, st):
         st.extra.setdefault('advanced_rules', {})['creatures_uncounterable'] = True
         return True
     m = re.fullmatch(r"(Noncreature |Creature |Artifact |Enchantment |Instant and sorcery |Instant |Sorcery |)[Ss]pells "
-                     r"(your opponents cast |)cost \{(\d+)\} more to cast\.", line)
+                     r"(your opponents cast |)cost \{(\d+)\} more to cast\.", line) or \
+        re.fullmatch(r"((?i:Artifact|Creature|Enchantment|Instant|Sorcery|Planeswalker)(?:, (?:and )?|,? and |,? or )"
+                     r"(?:(?i:Artifact|Creature|Enchantment|Instant|Sorcery|Planeswalker)(?:, (?:and )?|,? and |,? or ))*"
+                     r"(?i:Artifact|Creature|Enchantment|Instant|Sorcery|Planeswalker)) spells (your opponents cast |)"
+                     r"cost \{(\d+)\} more to cast\.", line)
     if m:
         rules = st.extra.setdefault('advanced_rules', {})
-        rules['spell_tax'] = rules.get('spell_tax', ()) + ((m[1].strip().lower(), bool(m[2]), int(m[3])),)
+        flt = m[1].strip().lower()
+        if "," in flt or " and " in flt and flt != "instant and sorcery" or " or " in flt:     # a list of card types
+            flt = "types:" + "|".join(re.findall(r"artifact|creature|enchantment|instant|sorcery|planeswalker", flt))
+        rules['spell_tax'] = rules.get('spell_tax', ()) + ((flt, bool(m[2]), int(m[3])),)
         return True
     m = re.fullmatch(r"Prevent all (combat )?damage that would be dealt to ~( by creatures)?\.", line)
     if m:
@@ -364,8 +371,17 @@ def on_upkeep(game, active):
             host = src.aura_host
             if host is not None and host.controller is active:
                 for trig in src.triggers:
-                    if trig.event == 'host_upkeep':
+                    if trig.event == 'host_upkeep' and is_host_kind(trig):
+                        # only this module's own kinds: cx_trig_events.host_phase queues the general ones (#714)
                         game.queue_trigger(player, trig.effects, src, src.card.name, context=host)
+
+
+HOST_KINDS = ('host_lose', 'host_damage', 'host_shrink')
+
+
+def is_host_kind(trig) -> bool:
+    """A host_upkeep trigger made of this module's kinds (they read the enchanted permanent as the context)."""
+    return bool(trig.effects) and all(e.kind in HOST_KINDS for e in trig.effects)
 
 
 def cumulative_upkeep(game, p, perm):
@@ -775,6 +791,10 @@ def spell_tax(game, player, card):
             continue
         for flt, opponents_only, n in x.card.advanced_rules['spell_tax']:
             if opponents_only and x.controller is player:
+                continue
+            if flt.startswith('types:'):
+                if any(t.capitalize() in card.types for t in flt[6:].split('|')):
+                    total += n
                 continue
             if not flt or (flt == 'noncreature' and not card.is_creature) or (flt == 'instant and sorcery' and (card.is_instant or card.is_sorcery)) \
                     or flt in ('creature', 'artifact', 'enchantment', 'instant', 'sorcery') and flt.capitalize() in card.types:

@@ -26,7 +26,8 @@ class EffectsMixin:
             return (source.has(keyword) if isinstance(source, Permanent)
                     else isinstance(source, CardDef) and keyword in source.keywords)
         from ..cx_shields import apply as cx_shields, unpreventable
-        preventable = not self.no_prevention_turn and not unpreventable(self, source)   # Skullcrack, Everlasting Torment
+        preventable = not self.no_prevention_turn and not unpreventable(self, source) \
+            and not getattr(self, "unpreventable_now", False)   # Skullcrack, Everlasting Torment, Lightning Surge
         amount = cx_shields(self, target, amount, by, source, combat, preventable)     # prevention / redirection rules
         if amount <= 0:
             return
@@ -99,6 +100,11 @@ class EffectsMixin:
                 if amount > 0:
                     self.change_life(target, -amount, cause)
         elif isinstance(target, Permanent) and target in target.controller.battlefield:
+            if target.is_creature or target.is_planeswalker:
+                # rule 120.4a: the damage beyond lethal (loyalty for a planeswalker), for "excess damage ... this way"
+                from ..excess_damage import lethal
+                limit = lethal(target, source) if target.is_creature else max(0, target.loyalty)
+                self.excess_dealt = getattr(self, "excess_dealt", 0) + max(0, amount - limit)
             if target.is_planeswalker:
                 target.counters["loyalty"] = target.loyalty - amount
             if target.is_battle:          # damage to a battle removes that many defense counters (#254)
@@ -390,9 +396,13 @@ class EffectsMixin:
 
     def discard_card(self, p: Player, card: CardDef):
         from ..madness import after_discard, discard_destination
-        card = self.move_card(card, p.hand, discard_destination(self, p, card), reason="discard")
-        p.discarded_cards.append(card)
-        after_discard(self, p, card)
+        from ..cx_discard_bf import onto_battlefield         # "... causes you to discard this card, put it onto the battlefield" (#628)
+        if onto_battlefield(self, p, card):
+            p.discarded_cards.append(card)
+        else:
+            card = self.move_card(card, p.hand, discard_destination(self, p, card), reason="discard")
+            p.discarded_cards.append(card)
+            after_discard(self, p, card)
         self.fire(p, "you_discard")
         # The subject lets typed listeners ("whenever an opponent discards a creature/land card",
         # Waste Not) filter on the discarded card's types.
@@ -510,6 +520,8 @@ class EffectsMixin:
             if left:
                 pl.graveyard.left = []
                 self.fire(pl, "gy_leave", subject=left)
+        if getattr(self, "_mid_resolution", 0):
+            return      # CR 704.3: not between the effects of a resolving item; resolve_top checks once it is done (#682)
         changed = True
         while changed:
             changed = False

@@ -257,7 +257,11 @@ class CombatMixin:
                 note_hit(self, src)
                 from ..dungeon_mechanics import initiative_combat
                 initiative_combat(self, src, tgt)
-                self.fire(src.controller, "combat_damage_player", src, context=tgt)
+                self.event_amount = hit         # "create that many ..." on a combat-damage trigger (#329)
+                try:
+                    self.fire(src.controller, "combat_damage_player", src, context=tgt)
+                finally:
+                    self.event_amount = None
                 ring.combat_damage(self, src.controller, src, tgt)
                 from ..advanced_templates import cipher_damage
                 cipher_damage(self, src)

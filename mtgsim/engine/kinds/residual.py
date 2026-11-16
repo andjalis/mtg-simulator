@@ -1,7 +1,7 @@
 """Shared mass moves, graveyard actions, Adapt, and triggered casting."""
 from ... import counter_mechanics, permanent_templates
 from ...cards import AltCost
-from ..state import Permanent
+from ..state import Permanent, card_matches
 from . import kind
 
 
@@ -11,11 +11,18 @@ def selected_mass_move(game, p, eff, item, **_):
     victims = [x for pl in game.players for x in pl.battlefield
                if permanent_templates.matches(game, x, eff.data['selector'], p, src)]
     snapshots = counter_mechanics.death_sources(game)
+    destroyed = []
     for victim in victims:
         if eff.data['dest'] == 'graveyard':
-            game.destroy(victim, counter_sources=snapshots, no_regen=eff.data.get("no_regen", False))
+            if game.destroy(victim, counter_sources=snapshots, no_regen=eff.data.get("no_regen", False)):
+                destroyed.append(victim)
         else:
             game.leave_battlefield(victim, 'hand')
+    if destroyed:       # "... for each creature destroyed this way" (#337)
+        from ..state import note_this_way
+        nouns = {"permanent"} | {t.lower() for t in ("Creature", "Artifact", "Enchantment", "Land", "Planeswalker")
+                                 if all(t in v.card.types for v in destroyed)}
+        note_this_way(item, "destroyed", nouns, len(destroyed))
 
 
 @kind('filtered_grave_return')
@@ -27,16 +34,23 @@ def filtered_grave_return(game, p, eff, **_):
 
 
 @kind('graveyard_exile_all', 'graveyard_exile_choice')
-def graveyard_exile(game, p, eff, target, **_):
-    players = [target] if target in game.players else game.players if eff.target == 'none' else []
+def graveyard_exile(game, p, eff, target, opp=None, **_):
+    d = eff.data or {}
+    if d.get('who'):          # zone_exile templates: "exile all <filter> cards from <whose> graveyard/hand"
+        players = {'you': [p], 'each': list(game.players), 'opponents': [game.opponent(p)]}.get(d['who']) \
+            or ([target] if target in game.players else [game.opponent(p)])
+    else:
+        players = [target] if target in game.players else game.players if eff.target == 'none' else []
+    zone = d.get('zone', 'graveyard')
     for player in players:
-        cards = list(player.graveyard)
+        src = player.hand if zone == 'hand' else player.graveyard
+        cards = [c for c in src if not d.get('desc') or card_matches(c, d['desc'])]
         if eff.kind == 'graveyard_exile_choice' and cards:
             chooser = getattr(player.ai, 'choose_grave_exile', None)
             chosen = chooser(game, player, cards) if chooser else min(cards, key=lambda c: c.cmc)
             cards = [chosen] if any(chosen is c for c in cards) else [cards[0]]
         for card in cards:
-            game.move_card(card, player.graveyard, player.exile)
+            game.move_card(card, src, player.exile)
 
 
 @kind('counter_context')

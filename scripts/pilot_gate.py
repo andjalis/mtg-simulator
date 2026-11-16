@@ -60,7 +60,14 @@ def run(command, cwd, log, env=None, timeout=CHECK_TIMEOUT):
 
 def _placeholder(text):
     """An unresolved "{...}"/"<...>" or the word unknown/placeholder. A cx_condlib code ("lib:" + JSON) is judged
-    by its string leaves, since its filter objects are JSON braces; broken JSON there is suspicious too."""
+    by its string leaves, since its filter objects are JSON braces; broken JSON there is suspicious too. A negated code
+    ("!lib:...", cx_links' "Otherwise", engine/stack.py) is judged the same way after the "!"; any other "!<word>:"
+    prefix is unknown."""
+    negated = re.match(r"!(\w+):", text)
+    if negated:
+        if negated[1] != "lib":
+            return True
+        text = text[1:]
     if text.startswith("lib:"):
         try:
             code = json.loads(text[4:])
