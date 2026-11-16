@@ -952,6 +952,20 @@
     "cards": ["Aang, Swift Savior // Aang and La, Ocean's Fury"]
   },
   {
+    "match": "transform (?:it|her|him)",
+    "effect": "transform_it",
+    "target": "prev",
+    "note": "it is the previous object or the permanent the trigger fired on, else ~ (kinds/face_states.py)",
+    "example": "Transform it",
+    "cards": ["Uninvited Geist // Unimpeded Trespasser", "Avacynian Missionaries // Lunarch Inquisitors"]
+  },
+  {
+    "match": "untap (?:~|it),? (?:and|then) transform (?:it|~)",
+    "effects": [{"effect": "untap_self"}, {"effect": "transform_it", "target": "prev"}],
+    "example": "Untap it, then transform it",
+    "cards": ["Foreboding Statue // Forsaken Thresher"]
+  },
+  {
     "match": "TAPSILENCE",
     "effect": "tap",
     "amount": 1,

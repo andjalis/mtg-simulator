@@ -294,6 +294,10 @@ def copy_token(game, p, **_):
 @kind("transform")
 def transform(game, target, **_):
     if isinstance(target, Permanent):
+        if target.card.back is None and "Incubator" in target.card.subtypes and target.card.is_token:
+            from ...face_states import transform_incubator      # "transform target Incubator token" (#635)
+            transform_incubator(game, target)
+            return
         game.transform(target)
 
 
