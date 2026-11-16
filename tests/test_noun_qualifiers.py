@@ -211,5 +211,80 @@ class RealCards(unittest.TestCase):
         self.assertEqual(spec["stat_x"], ["mana value", "<="])
 
 
+class Slice2(Base):
+    """non<color>, nonattacking / nonblocking, "that has a <kind> counter on it" (#403 slice 2)."""
+    BLACK = card("Test Shade", "{B}", "Creature — Shade", "", 2, 2)
+
+    def test_readings(self):
+        self.assertEqual(selector("nonblack creature"), {"not_colors": ["B"], "types_all": ["creature"]})
+        self.assertEqual(selector("nonattacking creature")["traits"], ["nonattacking"])
+        self.assertEqual(selector("creature that has a -1/-1 counter on it")["counter"], ["-1/-1", True])
+        self.assertEqual(selector("creatures that have +1/+1 counters on them", plural=True)["counter"], ["+1/+1", True])
+        for text in ("creature that has a +1/+1 counter", "nonpurple creature", "creature that had a counter on it"):
+            with self.subTest(text=text):
+                self.assertIsNone(selector(text))
+
+    def test_nonblack_excludes_black(self):
+        shade, bear = self.perm(self.BLACK, self.b), self.perm(BEAR, self.b)
+        eff = card("Test", "{1}{B}", "Instant", "Destroy target nonblack creature.").spell_effects[0]
+        with self.g.targeting(None):
+            legal = self.g.legal_targets(self.a, eff)
+        self.assertIn(bear, legal)
+        self.assertNotIn(shade, legal)
+
+    def test_nonattacking_excludes_attackers(self):
+        x, y = self.perm(BEAR, self.a), self.perm(BEAR, self.a)
+        self.g.attackers = [x]
+        eff = card("Test", "{W}", "Instant", "Untap target nonattacking creature.").spell_effects[0]
+        legal = self.g.legal_targets(self.a, eff)
+        self.assertIn(y, legal)
+        self.assertNotIn(x, legal)
+
+    def test_counter_qualifier_resolves(self):
+        marked = self.perm(BEAR, self.b)
+        marked.counters["-1/-1"] = 1
+        plain = self.perm(BEAR, self.b)
+        spell = card("Test", "{B}", "Sorcery", "Destroy target creature that has a -1/-1 counter on it.")
+        eff = spell.spell_effects[0]
+        legal = self.g.legal_targets(self.a, eff)
+        self.assertEqual(legal, [marked])
+        self.perm(SWAMP, self.a)
+        self.assertTrue(self.cast(spell, [marked]))
+        self.assertNotIn(marked, self.b.battlefield)
+        self.assertIn(plain, self.b.battlefield)
+
+    def test_heuristic_ai_aims_nonblack_removal_at_the_opponent(self):
+        theirs = self.perm(BEAR, self.b)
+        self.perm(self.BLACK, self.b)
+        self.perm(BEAR, self.a)
+        self.perm(SWAMP, self.a, 2)
+        spell = card("Test", "{1}{B}", "Sorcery", "Destroy target nonblack creature.")
+        plan = self.a.ai.plan_spell(self.g, self.a, spell, precombat=True)
+        self.assertIsNotNone(plan)
+        self.assertIs(plan[1][0], theirs)
+
+    def test_heuristic_ai_casts_the_nonblack_counter_sweep(self):
+        bears = [self.perm(BEAR, self.b) for _ in range(2)]
+        shade = self.perm(self.BLACK, self.a)
+        self.perm(SWAMP, self.a, 3)
+        spell = card("Test Banshee", "{2}{B}", "Sorcery", "Put a -1/-1 counter on each nonblack creature.")
+        self.assertEqual(spell.unsupported, [])
+        self.cast(spell)
+        self.assertTrue(all(b.counters.get("-1/-1") == 1 for b in bears))
+        self.assertFalse(shade.counters.get("-1/-1"))
+
+
+@unittest.skipUnless(DB_FILE.exists(), "card database not built")
+class RealCardsSlice2(unittest.TestCase):
+    def test_newly_full(self):
+        from mtgsim.carddb import CardDB
+        from mtgsim.coverage import card_coverage
+        db = CardDB()
+        for name in ("Alarum", "Banewhip Punisher", "Cradle to Grave", "Midnight Banshee", "Plaguebearer",
+                     "Ruthless Instincts", "Throat Slitter", "Triad of Fates", "Hunter's Ambush"):
+            with self.subTest(name=name):
+                self.assertEqual(card_coverage(db.get(name)).status, "full")
+
+
 if __name__ == "__main__":
     unittest.main()
