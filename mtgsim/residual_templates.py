@@ -384,6 +384,9 @@ def effect_value(game, player, effect, target):
     from .engine.state import Permanent
     from .engine.policy import perm_value
     from .permanent_templates import matches
+    if effect.kind == 'emblem_obj':
+        from .emblems import value
+        return value(game, player, effect)
     if effect.kind == 'selected_mass_move':
         return sum((1 if p is not player else -1) * perm_value(x) for p in game.players for x in p.battlefield
                    if matches(game, x, effect.data['selector'], player))

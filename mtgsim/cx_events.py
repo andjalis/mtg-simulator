@@ -735,7 +735,7 @@ def observe(game, p, event, source=None, context=None, subject=None):
     if trigger_suppressed(game, event, source, context, subject):
         return      # Torpor Orb and friends
     from .engine.state import Permanent
-    watchers = [x for pl in game.players for x in pl.battlefield if _has_ev(x)]
+    watchers = [x for pl in game.players for x in pl.battlefield + pl.command if _has_ev(x)]   # emblems (#839)
     watchers += cx_trig_turn.watchers(game)     # "Whenever <event> this turn, ..." (#399)
     if isinstance(source, Permanent) and source not in watchers and _has_ev(source):
         watchers.append(source)     # "~ or another creature dies": the dying source still sees it
