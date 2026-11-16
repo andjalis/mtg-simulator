@@ -307,5 +307,9 @@ _EFFECT_PATTERNS += _spell_grants.EFFECT_PATTERNS
 from .. import until_nonland as _until_nonland  # noqa: E402  "exile until a nonland card, you may cast it" (#625)
 _EFFECT_PATTERNS += _until_nonland.EFFECT_PATTERNS
 _SUBS += _until_nonland.SUBS
+from .. import dice_more as _dice_more  # noqa: E402  four-sided dice, roll advantage (#634)
+_EFFECT_PATTERNS += _dice_more.EFFECT_PATTERNS
+_parse_module._FACE_LINE_PARSERS = (_dice_more.face_line,) + _parse_module._FACE_LINE_PARSERS
+_SUBS += _dice_more.SUBS
 from .. import another_target as _another_target  # noqa: E402  "another target creature you control" (#809)
 _SUBS += _another_target.SUBS
