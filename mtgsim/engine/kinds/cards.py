@@ -676,3 +676,10 @@ def owner_library(game, p, eff, target, item=None, **_):
     """"Put it on top of / on the bottom of / Nth from the top of its owner's library" (mtgsim.cx_owner_library)."""
     from ...cx_owner_library import resolve
     resolve(game, p, eff, target, item)
+
+
+@kind("name_guess")
+def name_guess(game, p, eff, target=None, item=None, **_):
+    """"Choose a card name, then reveal / mill ... If that card has the chosen name, ..." (mtgsim.cx_card_name)."""
+    from ...cx_card_name import resolve
+    resolve(game, p, eff, target, item)
