@@ -81,7 +81,9 @@ def _parse_effects(text: str, opts: bool = False):
             continue
         from ..cx_exile_play import parse_rider as exile_play_rider        # "for as long as it remains exiled"
         from ..cx_replace_zones import parse_rider as leave_exile_rider      # "exile it instead of ... anywhere else"
+        from ..prevent_next_templates import parse_rider as instead_rider     # "If it's a green creature, ... instead"
         if batch1_rider(s, effects) or emerge_rider(s, effects) or shield_rider(s, effects) or exile_play_rider(s, effects) or \
+                instead_rider(s, effects) or \
                 leave_exile_rider(s, effects) or \
                 delayed_rider(s, effects) or watch_rider(s, effects) or spell_rider(s, effects):
             continue
@@ -547,7 +549,7 @@ def _parse_face(data: dict) -> CardDef:
     text = cx_replace.two_player_text(text)
     text = re.sub(r"\bthis (creature|land|spell|enchantment|artifact|permanent|token|vehicle|saga|aura|equipment|class|spacecraft|battle|siege)\b", "~",
                   text, flags=re.I)
-    text = re.sub(r"\b([Pp]rotection from (?:white|blue|black|red|green)) and from (white|blue|black|red|green)\b",
+    text = re.sub(r"\b([Pp]rotection from (?:[A-Za-z]+)) and from ([A-Za-z]+)\b",      # colours, types, subtypes (#326)
                   lambda m: f"{m[1]} and {m[1][0]}rotection from {m[2]}", text)
     text = re.sub(r"(becomes the target of (?:a spell or ability|a spell)), sacrifice it\.", r"\1, sacrifice ~.", text)
     from ..blink import prepare_linked
@@ -610,6 +612,7 @@ def _parse_face(data: dict) -> CardDef:
             line = handle(st, line)
             if line is None:
                 break
+    from ..cx_cda import late_line; st.unsupported[:] = [u for u in st.unsupported if not late_line(u, st)]  # noqa: E702
     approximations = st.approximations
     enters_tapped = st.enters_tapped
     etb = st.etb
@@ -645,7 +648,9 @@ def _parse_face(data: dict) -> CardDef:
                 continue
             if re.search(r"\binstead\b", k):
                 from ..cx_grammar_cond import kicked_instead
-                if not _kicker_instead(kicked_effects, k) and not kicked_instead(kicked_effects, k):
+                from ..prevent_next_templates import kicked_instead as shield_instead      # Orim's Touch (#333)
+                if not _kicker_instead(kicked_effects, k) and not kicked_instead(kicked_effects, k) and \
+                        not shield_instead(kicked_effects, k):
                     unsupported.append(f"if kicked: {k}")
                 continue
             effs, bad = _parse_effects(k)

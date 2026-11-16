@@ -108,9 +108,12 @@ def protected_from(perm, source) -> bool:
         return False
     if perm.has("protection from creatures") and isinstance(source, Permanent) and source.is_creature:
         return True
-    return any(perm.has(PROTECTION[c]) for c in card.colors) or \
-        len(card.colors) >= 2 and perm.has("protection from multicolored") or \
-        card.is_artifact and perm.has("protection from artifacts")
+    if any(perm.has(PROTECTION[c]) for c in card.colors) or \
+            len(card.colors) >= 2 and perm.has("protection from multicolored") or \
+            card.is_artifact and perm.has("protection from artifacts"):
+        return True
+    from ..protection_types import protected            # card types and subtypes ("from Demons", "from instants")
+    return protected(perm, card, source)
 
 
 class Permanent:
@@ -305,6 +308,11 @@ class Permanent:
             n = self._cda_count(self.card.pt_cda)
             bp += n
             bt += n
+        if creature and "cda_q" in self.card.advanced_rules:      # any _xq quantity (cx_cda)
+            from ..cx_cda import quantity_bonus
+            qp, qt = quantity_bonus(self)
+            bp += qp
+            bt += qt
         if creature:
             for pl in (self.controller, self.controller.foe):
                 for x in (pl.battlefield if pl is not None else ()):

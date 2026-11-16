@@ -256,8 +256,15 @@ def _quantity(text: str):
         return None                         # the triggering object, which the counts don't read
     from .cx_night_quantity import _quantity as quantity, _plural_zone
     spec = quantity(text)
-    return spec if spec is not None or text.startswith("the number of") else \
-        quantity("the number of " + _plural_zone(text), plural=False)
+    if spec is not None or text.startswith("the number of"):
+        return spec
+    spec = quantity("the number of " + _plural_zone(text), plural=False)
+    if spec is None:
+        # "for each <thing>": the grammar's reader, which makes the head noun plural ("basic land TYPE among lands
+        # you control", "card named ~ in your graveyard") and refuses what it can't count (#329)
+        from .cx_grammar import _count_spec
+        spec = _count_spec(text)
+    return spec
 
 
 def _split_descs(masked: str) -> list:

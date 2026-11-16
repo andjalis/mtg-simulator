@@ -41,6 +41,9 @@ def _body(text: str):
         return [Effect("token", n, target=_SAME)] if n and not m[2] else None
     if re.fullmatch(r"(?:~|it|this spell) deals twice X damage to that (?:permanent|creature|player)", text, re.I):
         return [Effect("damage", target=_SAME, data={"x": True, "instead_multiplier": 2})]
+    if re.fullmatch(r"return that card from (?:your|its owner's) graveyard to the battlefield", text, re.I):
+        # Stitch Together: the same graveyard return, to the battlefield instead of the hand
+        return [Effect("gy_move", target=_SAME, data={"dest": "bf", "instead_amount": True})]
     if re.fullmatch(r"that player mills twice that many cards", text, re.I):
         return [Effect("mill", target=_SAME, data={"instead_amount": True, "instead_multiplier": 2})]
     m = re.fullmatch(r"(?:those creatures|they) get ([+-]\d+)/([+-]\d+) until end of turn", text, re.I)

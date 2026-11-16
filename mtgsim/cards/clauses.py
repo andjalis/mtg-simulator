@@ -465,6 +465,11 @@ def _xq(text: str):
                  "the number of cards in an opponent's hand": ("opp_hand",)}[tl])
     if tl in ("the amount of mana spent to cast that spell", "the number of colors of mana spent to cast that spell"):
         return ("spell", "mana_spent" if tl.startswith("the amount") else "converge")   # its payment (Game.x_quantity)
+    m = re.fullmatch(r"the number of (auras?|equipments?|auras? and equipments?|equipments? and auras?) attached to "
+                     r"(?:~|him|her)", t, re.I)
+    if m:      # "for each Aura and Equipment attached to ~" (#343): the card's own attachments
+        words = m[1].lower()
+        return ("attached", tuple(k for k in ("Aura", "Equipment") if k.lower() in words))
     m = re.fullmatch(r"that spell's (mana value|power|toughness)|the number of (?:that spell's colors)|"
                      r"the amount of generic mana in that spell's mana cost", t, re.I)
     if m:      # the spell a cast trigger fired on, or the spell a counterspell targets (not the host)

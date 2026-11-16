@@ -140,6 +140,9 @@ def _trusted(spec, text: str, strict: bool = True) -> bool:
     t = re.sub(r"^the number of ", "", text.strip(), flags=re.I)
     if kind in ("life", "speed", "hand", "party", "colors_among", "devotion"):
         return True
+    if kind == "attached":          # "for each Aura and Equipment attached to ~" (#343)
+        return bool(re.fullmatch(r"(?:auras?|equipments?)(?: and (?:auras?|equipments?))? attached to (?:~|him|her)",
+                                 t, re.I))
     if kind == "counters":
         return bool(re.fullmatch(rf"{re.escape(spec[1])} counters? on ~", t, re.I))
     if kind in ("count", "gy"):

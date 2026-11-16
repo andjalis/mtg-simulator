@@ -955,6 +955,9 @@ class HeuristicAI:
                 d = eff.data or {}
                 value += max(1, eff.amount) * (1.0 + (d.get("power", 0) + d.get("toughness", 0)) / 2
                                                if "power" in d else MINOR_EFFECTS["treasure"])
+            elif eff.kind == "cx_token" and eff.target == "none" and eff.data.get("who") in ("you", "each"):
+                targets.append(None)            # tokens you get (#329): how many now, times what each is worth
+                value += self._cx_token_value(game, me, card, eff)
             elif eff.kind == "p1_counters":
                 tgt = self.choose_target(game, me, eff) if eff.target in engine.TARGETED else None
                 if eff.target in engine.TARGETED and tgt is None:
@@ -1000,6 +1003,22 @@ class HeuristicAI:
             if targets is None:
                 return None
         return (value - self._sac_cost(game, me, card), targets)
+
+    @staticmethod
+    def _cx_token_value(game: Game, me: Player, card: CardDef, eff: Effect) -> float:
+        """What a cx_token effect's tokens are worth to me: the count it makes now ("for each ..." read as it stands,
+        an event's "that many" as 1) times 1 + average body, or a Treasure-like artifact's minor value."""
+        from types import SimpleNamespace
+        d = eff.data
+        n = max(1, eff.amount)
+        if d.get("xq"):
+            n *= game.x_quantity(me, d["xq"], SimpleNamespace(source=None, card=card, context=None, x=0), None)
+        elif d.get("per_opponent"):
+            n *= max(1, len(game.players) - 1)
+        tok = d.get("card")
+        each = 1.0 + ((tok.power or 0) + (tok.toughness or 0)) / 2 if tok is not None and tok.is_creature \
+            else MINOR_EFFECTS["treasure"]
+        return n * each
 
     def _mana_spell_value(self, game: Game, me: Player, card: CardDef) -> float:
         """A spell that only adds mana ("ritual"): worth casting when the mana it would make brings a

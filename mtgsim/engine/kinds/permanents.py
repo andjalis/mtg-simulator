@@ -6,7 +6,7 @@ import dataclasses
 from ... import copies, counter_mechanics
 from ...cards import CardDef, Effect, jace_token, make_token, role_token
 from ..policy import choose_basic, perm_value
-from ..state import Permanent, Player, StackItem, is_basic_land
+from ..state import Permanent, Player, StackItem, is_basic_land, note_this_way
 from . import NO_SBA, kind
 
 
@@ -536,6 +536,7 @@ def edict(game, p, eff, opp, target=None, item=None, **_):
         item.sacrificed_permanent = None
     victims = sorted(victim_player.creatures, key=perm_value)[:eff.amount]
     sources = counter_mechanics.death_sources(game)
+    sacrificed = 0
     for v in victims:
         if eff.data.get("exile"):
             game.leave_battlefield(v, "exile")
@@ -543,9 +544,11 @@ def edict(game, p, eff, opp, target=None, item=None, **_):
         elif eff.data.get("destroy"):
             game.destroy(v)
         else:
-            game.sacrifice(v, counter_sources=sources)
+            sacrificed += game.sacrifice(v, counter_sources=sources) is not False and v not in v.controller.battlefield
             if item is not None:
                 item.sacrificed_permanent = v
+    # "Create a Food token for each creature sacrificed this way" (Syphon Flesh, Voracious Fell Beast, #329)
+    note_this_way(item, "sacrificed", ("permanent", "creature"), sacrificed)
 
 
 @kind("endure")

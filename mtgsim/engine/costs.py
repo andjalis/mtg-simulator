@@ -238,6 +238,12 @@ class CostsMixin:
             if spec[1] == "mana value":
                 return card.cmc + getattr(spell, "x", 0) * (card.mana_cost.get("X", 0) if isinstance(card.mana_cost, dict) else 0)
             return max(0, int(getattr(card, "power" if spec[1] == "power" else "toughness", 0) or 0))
+        if kind == "attached":       # Auras / Equipment attached to the source (#343)
+            if src is None:
+                return 0
+            return sum(1 for pl in self.players for x in pl.battlefield
+                       if x is not src and (x.attached_to is src or getattr(x, "aura_host", None) is src)
+                       and any(k in x.card.subtypes for k in spec[1]))
         if kind == "stat":
             if spec[1] == "sacrificed":
                 who = getattr(item, "sacrificed_permanent", None)

@@ -546,6 +546,65 @@ def _spells_turn(m):
     return _code("spells", op, n)
 
 
+# ---- #341 cost-reduction conditions (each is a plain board / turn-history fact, read the same in every context)
+
+@rule(r"it's (?P<w>night|day)")
+def _day_night(m):
+    return _code("daynight", m["w"].lower())
+
+
+@rule(rf"an opponent (?:has )?cast (?P<q>{_NUM} or more) spells this turn")
+def _opp_spells(m):
+    op, n = _quant(m["q"])
+    return _code("opp_spells", op, n)
+
+
+@rule(rf"an opponent has drawn (?P<n>{_NUM}) or more cards this turn")
+def _opp_drawn(m):
+    return _code("drawn_opp", _n(m["n"]))
+
+
+@rule(r"there are no (?P<f>[\w -]+?) cards in your hand")
+def _none_in_hand(m):
+    f = _filter(m["f"], plural=False)
+    return _code("hand", f, "==", 0) if f is not None else ""
+
+
+@rule(rf"there are (?P<q>{_NUM} or more) (?P<f>[\w -]+?) cards total in all graveyards")
+def _all_graveyards(m):
+    f = _filter(m["f"], plural=False)
+    op, n = _quant(m["q"])
+    return _code("gy_all", f, op, n) if f is not None else ""
+
+
+@rule(r"a creature is attacking you")
+def _attacking_you(m):
+    return _code("attacking_you")
+
+
+@rule(rf"creatures you control have total toughness (?P<n>{_NUM}) or greater")
+def _total_toughness(m):        # (total power has its own older rule, "total_power")
+    return _code("total_stat", "toughness", ">=", _n(m["n"]))
+
+
+@rule(r"a player's life total is less than or equal to half their starting life total")
+def _half_life(m):
+    return _code("half_life")
+
+
+@rule(r"you control an? (?P<t>[A-Z][a-z]+) creature and a non-(?P<u>[A-Z][a-z]+) creature")
+def _type_and_non(m):
+    if m["t"] != m["u"]:
+        return ""
+    return _code("and", _code("ctl", "you", {"sub": [m["t"]], "types": ["creature"]}, ">=", 1),
+                 _code("non_sub_creature", m["t"]))
+
+
+@rule(r"you control at least two creatures that share a creature type")
+def _share_type(m):
+    return _code("share_type", 2)
+
+
 @rule(rf"you(?:'ve| have)? gained (?P<n>{_NUM}) or more life this turn")
 def _gained(m):
     return f"gained_life>={_n(m['n'])}"
@@ -1252,6 +1311,39 @@ def check(game, p, code: str, item=None, source=None, prev=None):
     if kind == "drawn":
         drawn = getattr(p, "drawn_turn", (None, 0))
         return drawn[0] == game.turn and drawn[1] >= args[0]
+    if kind == "drawn_opp":
+        drawn = getattr(game.opponent(p), "drawn_turn", (None, 0))
+        return drawn[0] == game.turn and drawn[1] >= args[0]
+    if kind == "daynight":
+        return getattr(game, "day_night", None) == args[0]
+    if kind == "opp_spells":
+        return _cmp(game.spells_cast_turn(game.opponent(p)), *args)
+    if kind == "hand":
+        spec, op, n = args
+        return _cmp(sum(_card_ok(c, spec) for c in p.hand), op, n)
+    if kind == "gy_all":
+        spec, op, n = args
+        return _cmp(sum(_card_ok(c, spec) for pl in game.players for c in pl.graveyard), op, n)
+    if kind == "attacking_you":
+        return any(a.controller is not p for a in getattr(game, "attackers", ()) or ())
+    if kind == "total_stat":
+        stat, op, n = args
+        return _cmp(sum(max(0, getattr(x, stat)) for x in p.creatures), op, n)
+    if kind == "half_life":
+        return any(pl.life <= getattr(pl, "starting_life", 20) // 2 for pl in game.players)
+    if kind == "non_sub_creature":
+        return any(x.is_creature and args[0] not in x.card.subtypes and not getattr(x.card, "changeling", False)
+                   for x in p.battlefield)
+    if kind == "share_type":
+        from collections import Counter
+        seen = Counter()
+        wild = 0
+        for x in p.creatures:
+            if getattr(x.card, "changeling", False):
+                wild += 1
+            else:
+                seen.update(set(x.card.subtypes))
+        return wild + max(seen.values(), default=0) >= args[0] and (seen or wild >= args[0])
     if kind == "attacked":
         return p.attacked_with >= args[0]
     if kind == "total_power":

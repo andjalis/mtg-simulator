@@ -26,7 +26,8 @@ class EffectsMixin:
             return (source.has(keyword) if isinstance(source, Permanent)
                     else isinstance(source, CardDef) and keyword in source.keywords)
         from ..cx_shields import apply as cx_shields, unpreventable
-        preventable = not self.no_prevention_turn and not unpreventable(self, source)   # Skullcrack, Everlasting Torment
+        preventable = not self.no_prevention_turn and not unpreventable(self, source) \
+            and not getattr(self, "unpreventable_now", False)   # Skullcrack, Everlasting Torment, Lightning Surge
         amount = cx_shields(self, target, amount, by, source, combat, preventable)     # prevention / redirection rules
         if amount <= 0:
             return
