@@ -763,6 +763,7 @@ class Player:
         self.library: list[CardDef] = []
         self.pool: list = []                 # Firebending: one-use red mana until end of combat
         self.emblems: list = []              # (creature type, +power, +toughness): "Ninjas you control get +1/+1"
+        self.command: list = []              # emblem objects with triggered abilities (mtgsim/emblems.py, #839)
         self.hand: list[CardDef] = []
         self.battlefield: list[Permanent] = []
         self.graveyard: list[CardDef] = Graveyard()

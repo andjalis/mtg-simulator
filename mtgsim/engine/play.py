@@ -357,7 +357,7 @@ class PlayMixin:
         if self.commits_crime(p, targets):
             self.fire(p, "crime")
         if not card.is_ability:
-            for perm in list(p.battlefield):
+            for perm in list(p.battlefield) + list(p.command):      # emblems' cast triggers (#839)
                 for trig in perm.triggers:
                     flt = trig.filter
                     if flt.startswith("spell:"):
