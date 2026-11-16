@@ -301,6 +301,8 @@ class EffectsMixin:
             if effect.source is perm:
                 continuous.refresh(effect.target)
         perm.last_destination = to
+        if to == "graveyard":           # gravestorm counts these, tokens included (CR 702.69a, #646)
+            self.to_graveyard_turn = getattr(self, "to_graveyard_turn", 0) + 1
         perm.front.generation += 1
         perm.front.last_zone = "battlefield"
         perm.front.zone = None
