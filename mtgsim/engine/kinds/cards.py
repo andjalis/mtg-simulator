@@ -187,6 +187,12 @@ def discard(game, p, eff, target, item=None, **_):
 
 @kind("discard_choice")
 def discard_choice(game, p, eff, target, **_):
+    if isinstance(target, Player) and eff.data.get("all"):     # "reveals their hand and discards all <X> cards" (#631)
+        kept = sorted(target.hand, key=lambda c: c.cmc, reverse=True)[:eff.data.get("keep", 0)]   # their own pick
+        for card in [c for c in target.hand if _hand_matches(c, eff) and not any(c is k for k in kept)]:
+            game.discard_card(target, card)
+            game.log(f"makes {target} discard {card.name}", p)
+        return
     if isinstance(target, Player):
         card = game.hook(p, "choose_discard_from")(game, p, target)
         if eff.filter == "noncreature":    # Duress: a noncreature, nonland card
@@ -228,6 +234,7 @@ _TYPES = {"creature": lambda c: c.is_creature, "land": lambda c: c.is_land,
           "planeswalker": lambda c: c.is_planeswalker, "instant": lambda c: c.is_instant,
           "sorcery": lambda c: c.is_sorcery}
 _COLORS = {"white": "W", "blue": "U", "black": "B", "red": "R", "green": "G"}
+_QUALITIES = {"colorless": lambda c: not c.colors, "multicolored": lambda c: len(c.colors) > 1}    # #631
 
 
 def _hand_matches(card, eff):
@@ -250,7 +257,8 @@ def _hand_matches(card, eff):
         if tokens and all(
                 (not t.startswith("non") and
                  (_TYPES[t](card) if t in _TYPES else
-                  _COLORS[t] in card.colors if t in _COLORS else t in subtypes))
+                  _COLORS[t] in card.colors if t in _COLORS else
+                  _QUALITIES[t](card) if t in _QUALITIES else t in subtypes))
                 or (t.startswith("non") and not _TYPES.get(t[3:], lambda c: False)(card))
                 for t in tokens):
             return True
