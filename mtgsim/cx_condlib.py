@@ -896,6 +896,14 @@ def _main_cast(m):
     return _code("main_cast")
 
 
+@rule(r"(?:its|his|her|~'s|this spell's|this creature's) (?P<k>surge|spectacle|madness|prowl|freerunning|mayhem|sneak|"
+      r"emerge|dash|blitz|evoke|warp) cost was paid")
+def _alt_paid(m):
+    """"If ~'s surge cost was paid" / "if its prowl cost was paid": the spell (or the spell the permanent resolved
+    from) was cast for that alternative cost."""
+    return _code("cast_kind", m["k"].lower())
+
+
 @rule(r"(?:you cast (?:~|it|this spell) from|(?:~|it|this spell) was cast from) (?P<z>a graveyard|your graveyard|exile)")
 def _cast_from(m):
     return _code("cast_zone", "exile" if m["z"].lower() == "exile" else "graveyard")
@@ -1159,6 +1167,21 @@ def _player_for(game, p, who, item):
     return game.opponent(p) if game is not None else None
 
 
+def _cast_kind(item, source) -> str:
+    """The alternative cost the resolving spell was cast for, or that the permanent's spell was ("prowl" for the
+    cond_alt cost cx_mech made of a Prowl line); "" when it was cast normally or not at all."""
+    from .engine.state import Permanent
+    if getattr(item, "is_spell", False) and item.card is not None:
+        card, kind = item.card, (getattr(item.card, "origin", None) or (None, ""))[1]
+    elif isinstance(source, Permanent):
+        card, kind = source.card, source.cast_kind
+    else:
+        return ""
+    if kind.startswith("emerge"):
+        return "emerge"
+    return (getattr(card, "advanced_rules", None) or {}).get("alt_names", {}).get(kind, kind)
+
+
 def _kicked(game, item, source) -> bool:
     if source is not None and getattr(source, "kicked", False):
         return True
@@ -1332,6 +1355,8 @@ def check(game, p, code: str, item=None, source=None, prev=None):
         return getattr(game, "monarch", None) is None
     if kind in ("starting", "not_starting"):
         return (game.players[0] is p) == (kind == "starting")
+    if kind == "cast_kind":
+        return _cast_kind(item, source) == args[0]
     if kind == "kicked":
         return _kicked(game, item, source)
     if kind == "ctx_kicked":
