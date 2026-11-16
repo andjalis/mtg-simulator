@@ -690,6 +690,8 @@ def ability_worth(game: Game, me: Player, perm: Permanent, idx: int, reserve: in
                    if e.data.get("x") else e for e in effects]
         effects = [dataclasses.replace(e, data=dict(e.data, x_now=x)) if e.data.get("mv_x") else e
                    for e in effects]        # "mana value X or less" (Fiend Artisan): judge with the X chosen (#379)
+        from ..cx_noun import fix_x
+        effects = fix_x(effects, x)         # "with mana value X" on a target or group (#403)
     if c.get("remove_counter_count") == "x" and x is None:     # "Remove X ... counters from ~": all of them (#345)
         n = perm.counters.get(c["remove_counter"], 0)
         effects = [dataclasses.replace(e, amount=n, amount2=n if e.data.get("x2") else e.amount2)
