@@ -43,10 +43,16 @@ class Parse(unittest.TestCase):
         self.assertEqual([e.data["selector"]["controller"] for e in effs], ["mine", "opp"])
         self.assertTrue(all(e.data["optional_target"] for e in effs))
 
+    def test_comma_joined_modifiers_are_read(self):
+        effs, bad = _parse_effects("Exile target non-Saga, nonland permanent until ~ leaves the battlefield.")
+        self.assertEqual(bad, [])
+        self.assertEqual([e.kind for e in effs], ["oring"])
+        self.assertEqual(effs[0].data["selector"], {"not_subtypes": ["saga"], "traits": ["nonland"],
+                                                    "types_all": ["permanent"]})
+
     def test_refusals(self):
         for text in ("For each opponent, exile target nonland permanent that player controls until ~ leaves the "
                      "battlefield.",
-                     "Exile target non-Saga, nonland permanent until ~ leaves the battlefield.",
                      "Exile any number of other target creatures controlled by different players until ~ leaves "
                      "the battlefield."):
             with self.subTest(text=text):
