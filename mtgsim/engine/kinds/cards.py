@@ -152,15 +152,14 @@ def discard_each(game, p, eff, opp, **_):
 
 
 @kind("reorder_top")
-def reorder_top(game, p, eff, **_):
-    """Look at the top N and put them back in any order: lands first while short of them, else spells first."""
-    n = min(eff.amount, len(p.library))
-    if n < 2:
-        return
-    top = p.library[-n:]
-    want_land = sum(x.card.is_land for x in p.battlefield) + sum(c.is_land for c in p.hand) < 5
-    top.sort(key=lambda c: c.is_land == want_land)       # the last one is the top card
-    p.library[-n:] = top
+def reorder_top(game, p, eff, target=None, **_):
+    """Look at the top N and put them back in any order: lands first while short of them, else spells first.
+    With a target player (#346) it is that player's library, ordered for them if it is the controller's own and
+    against them otherwise; "that player looks at ... your library" (chooser opponent) orders yours against you."""
+    from .library_peek import order_top
+    who = target if isinstance(target, Player) else p
+    friendly = who is p and eff.data.get("chooser") != "opponent"
+    order_top(who, eff.amount, friendly)
 
 
 @kind("discard")
