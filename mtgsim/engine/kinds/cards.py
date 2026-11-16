@@ -361,7 +361,8 @@ def choose_one_exiled(game, p, **_):
 
 @kind("may_play_exiled")
 def may_play_exiled(game, p, eff, **_):
-    p.impulse += [(c, game.turn + eff.amount) for c in p.impulse_new]
+    cast_only = eff.data.get("cast_only")      # "you may cast ...": a land card can't be cast (#839)
+    p.impulse += [(c, game.turn + eff.amount) for c in p.impulse_new if not (cast_only and c.is_land)]
     p.impulse_new = []
 
 

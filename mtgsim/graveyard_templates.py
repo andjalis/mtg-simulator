@@ -88,8 +88,9 @@ EFFECT_PATTERNS = [
      r"(?:~|this [a-z]+?)'s power from (your|a|an opponent's|that player's) graveyard"
      r"( without paying its mana cost)?",
      lambda m: _gy_cast(m[1], m[2], m[3], cap="power")),
+    # "... this turn" (Jace, Telepath Unbound) reads as the immediate cast, as "until end of turn, you may cast" does
     (r"you may cast target ([a-z, ]+?) card from (your|a|an opponent's|that player's) graveyard"
-     r"( without paying its mana cost)?",
+     r"( without paying its mana cost)?(?: this turn)?",
      lambda m: _gy_cast(m[1], m[2], m[3])),
     # "Put any number of target <desc> cards from your graveyard on top of your library"
     # (Bone Harvest): every matching card goes back on top of the library.
@@ -103,13 +104,20 @@ _GY_ZONES = {"your": "yours", "a": "any", "an opponent's": "opponents", "that pl
 
 def _gy_cast(desc, zone, free, cap=None):
     from .cards import Effect, NO_MATCH, _num
-    # Only the instant/sorcery (plus Victor Timely's artifact) descriptors; anything
-    # else ("a red instant or sorcery card", "a card with the same name as that spell")
-    # stays an ignored line rather than silently over-matching.
+    # Only the instant/sorcery (plus Victor Timely's artifact) descriptors, with at most one leading colour that
+    # applies to the whole phrase ("red instant or sorcery": a red instant or a red sorcery, #839), kept apart from
+    # the type words since card_matches would bind it to the first type only; anything else ("a card with the same
+    # name as that spell") stays an ignored line rather than silently over-matching.
+    color = None
+    m = re.match(r"(white|blue|black|red|green) (.+)", desc.strip())
+    if m:
+        color, desc = m[1], m[2]
     words = [w for w in re.split(r"[,\s]+", desc.strip()) if w != "or"]
     if not words or any(w not in ("instant", "sorcery", "artifact") for w in words):
         return NO_MATCH
     data = {"desc": desc.strip(), "gy": _GY_ZONES[zone]}
+    if color:
+        data["color"] = color
     if free:
         data["free"] = True
     if cap == "power":

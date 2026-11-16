@@ -66,10 +66,15 @@ class GyCastParse(unittest.TestCase):
         self.assertEqual(cast.data["gy"], "opponents")
         self.assertNotIn("gy_instead", cast.data)
 
-    def test_colored_descriptor_stays_ignored(self):
+    def test_colored_descriptor_is_a_separate_filter(self):
+        # #839: one leading colour covers the whole phrase (a red instant or a red sorcery); it's kept apart from the
+        # type words, since card_matches would bind it to the first type only (a blue sorcery would match)
         effects, ignored = _parse_effects("You may cast target red instant or sorcery card "
                                           "from your graveyard.")
-        self.assertFalse(effects)
+        self.assertEqual(ignored, [])
+        self.assertEqual((effects[0].data["desc"], effects[0].data["color"]), ("instant or sorcery", "red"))
+        effects, ignored = _parse_effects("You may cast target red multicolored instant card from your graveyard.")
+        self.assertFalse(effects)                     # anything beyond one colour stays ignored
         self.assertTrue(ignored)
 
 

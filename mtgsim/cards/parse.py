@@ -78,6 +78,8 @@ def _parse_effects(text: str, opts: bool = False):
         from ..exile_permissions import parse_rider as exile_rider
         if exile_rider(s, effects):
             continue
+        if __import__("mtgsim.may_cast", fromlist=["x"]).parse_rider(s, effects):   # "you may cast that card this turn" (#839)
+            continue
         from ..that_spell import parse_rider as spell_rider
         from ..chance_templates import parse_rider as chance_rider
         if chance_rider(s, effects):

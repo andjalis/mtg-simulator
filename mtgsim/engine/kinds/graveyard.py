@@ -486,8 +486,10 @@ def gy_cast(game, p, eff, item, opp, **_):
         src = item.source if item is not None else None
         cap = src.power if isinstance(src, Permanent) and src in src.controller.battlefield else None
     desc = _filter_desc(eff.data["desc"])
+    color = eff.data.get("color")           # "target red instant or sorcery card": the whole phrase is red (#839)
     cands = [(o, c) for o in owners for c in o.graveyard
-             if card_matches(c, desc) and (cap is None or c.cmc <= cap)]
+             if card_matches(c, desc) and (cap is None or c.cmc <= cap)
+             and (not color or card_matches(c, f"a {color} card"))]
     if not cands:
         return
     cands.sort(key=lambda pair: card_value(pair[1]), reverse=True)
