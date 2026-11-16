@@ -112,7 +112,7 @@ def _named_gy(name):
 def _search(m):
     from .cards import Effect
     dest = "top" if not m["dest"] else "hand" if m["dest"].startswith("into") else "battlefield"
-    theirs = (m["who"] or "").startswith(("its", "that"))
+    theirs = (m["who"] or "").lower().startswith(("its", "that"))     # "Its controller may search" (Path to Exile, #816)
     what = f"a {m['what']} card"
     if m["mv"]:
         # "a Rebel permanent card with mana value 3 or less": card_matches understands the clause.
