@@ -34,7 +34,7 @@ def filtered_grave_return(game, p, eff, **_):
 
 
 @kind('graveyard_exile_all', 'graveyard_exile_choice')
-def graveyard_exile(game, p, eff, target, opp=None, **_):
+def graveyard_exile(game, p, eff, target, opp=None, item=None, **_):
     d = eff.data or {}
     if d.get('who'):          # zone_exile templates: "exile all <filter> cards from <whose> graveyard/hand"
         players = {'you': [p], 'each': list(game.players), 'opponents': [game.opponent(p)]}.get(d['who']) \
@@ -51,6 +51,12 @@ def graveyard_exile(game, p, eff, target, opp=None, **_):
             cards = [chosen] if any(chosen is c for c in cards) else [cards[0]]
         for card in cards:
             game.move_card(card, src, player.exile)
+        source = getattr(item, "source", None)
+        if zone == 'hand' and isinstance(source, Permanent) and source in source.controller.battlefield and any(
+                e.kind == 'exiled_returned' for t in source.card.triggers for e in t.effects):
+            # "When ~ leaves the battlefield, return the exiled cards to their owner's hand" (Wormfang Behemoth):
+            # linked to ~, returned by Game.leave_battlefield (audit round 3)
+            source.exiled_to_hand += [(card, player) for card in cards]
 
 
 @kind('counter_context')

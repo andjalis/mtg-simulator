@@ -1,6 +1,8 @@
 """Game methods for game events that effects and rules cause: damage, destroy, sacrifice, dying, state-based actions."""
 from __future__ import annotations
 
+import re
+
 from .. import continuous, counter_mechanics, cx_static_damage, cx_triggers, that_much, this_way
 
 from .. import auras, cx_trig_damage, cx_trig_state
@@ -218,7 +220,9 @@ class EffectsMixin:
 
     def dig(self, p: Player, n: int, keep: int, desc: str | None = None):
         cards = list(reversed(p.library[-min(n, len(p.library)):])) if n else []
-        allowed = [c for c in cards if card_matches(c, desc.replace(" or ", " or a "))] if desc else cards
+        # "artifact or creature card" -> "artifact or a creature card"; never "power 2 or less" (#776)
+        allowed = [c for c in cards if card_matches(c, re.sub(r" or (?!less\b|greater\b|more\b)", " or a ", desc))] \
+            if desc else cards
         chosen = list(self.hook(p, "choose_dig")(self, p, list(allowed), keep))[:keep] if allowed else []
         rest = list(cards)
         for c in chosen:
@@ -301,6 +305,10 @@ class EffectsMixin:
         perm.front.last_zone = "battlefield"
         perm.front.zone = None
         controller.perm_left_turn = True
+        # what was attached as it left: their "when enchanted / equipped creature dies / leaves" triggers look back
+        # in time (CR 603.10a) though the Auras are put into the graveyard next (cx_events.observe, #782)
+        perm.left_attachments = list(perm.auras) + [x for pl in self.players for x in pl.battlefield
+                                                    if x.attached_to is perm]
         if perm.card.aura:
             auras.detach(perm)
         perm.attached_to = None
@@ -389,6 +397,8 @@ class EffectsMixin:
         if item is not None and item.controller is not p and any(rules(x).get("sac_protection") for x in p.battlefield):
             return False
         p.sacrificed_turn += 1
+        if item is not None:            # "you gain life equal to that creature's toughness" after an edict (#778)
+            item.sacrificed_permanent = perm
         for other in list(p.battlefield):
             for trig in other.triggers:
                 if trig.event == "sacrifice" and (card_matches(perm.card, trig.filter) if not trig.filter.startswith("another ") else
