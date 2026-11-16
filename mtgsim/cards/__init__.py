@@ -306,3 +306,6 @@ _SUBS += _until_nonland.SUBS
 from .. import votes as _votes  # noqa: E402  will of the council / council's dilemma (#634)
 _EFFECT_PATTERNS += _votes.EFFECT_PATTERNS
 _parse_module._FACE_LINE_PARSERS = (_votes.face_line,) + _parse_module._FACE_LINE_PARSERS
+from .. import piles as _piles  # noqa: E402  separate into two piles (#634)
+_EFFECT_PATTERNS += _piles.EFFECT_PATTERNS
+_SUBS += _piles.SUBS

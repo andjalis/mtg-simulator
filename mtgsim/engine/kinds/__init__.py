@@ -59,3 +59,4 @@ from . import cx_trig_turn  # noqa: E402,F401  (triggers for the rest of the tur
 from . import cx_trig_damage  # noqa: E402,F401  (damage triggers from any source, #521)
 from . import cx_bounce  # noqa: E402,F401  (bounce residue, #638)
 from . import votes  # noqa: E402,F401  (votes: will of the council, council's dilemma, #634)
+from . import piles  # noqa: E402,F401  (piles: separate into two piles, #634)

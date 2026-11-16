@@ -881,7 +881,7 @@ class HeuristicAI:
                     + self._static_value(game, me, card) - self._sac_cost(game, me, card), None)
         instant = card.instant_speed
         if any('anchor' in e.data or e.kind in ('allocated_counter', 'return_tribal_grave', 'grave_library_top',
-                'control_permanent', 'cx_exchange', 'cx_attach', 'populate', 'advanced_quantity_stats', 'selected_mass_move', 'filtered_grave_return', 'graveyard_exile_all', 'graveyard_exile_choice', 'give_control_choice', 'give_control_all', 'vote') for e in card.spell_effects):
+                'control_permanent', 'cx_exchange', 'cx_attach', 'populate', 'advanced_quantity_stats', 'selected_mass_move', 'filtered_grave_return', 'graveyard_exile_all', 'graveyard_exile_choice', 'give_control_choice', 'give_control_all', 'vote', 'piles') for e in card.spell_effects):
             from .engine.policy import _mode_value
             with game.targeting(card):
                 value = _mode_value(game, me, card.spell_effects)
