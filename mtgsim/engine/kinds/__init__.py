@@ -21,6 +21,19 @@ def kind(*names):
     return register
 
 
+def import_rest():
+    """Import every module of this package that the lines below (and anything since) did not, in name order.
+
+    A new kind module needs no import line: engine/resolve.py calls this once the package is loaded, so its
+    @kind handlers register. The explicit lines below keep the historical import order of the older modules."""
+    import importlib
+    import pkgutil
+    import sys
+    for name in sorted(m.name for m in pkgutil.iter_modules(__path__)):
+        if f"{__name__}.{name}" not in sys.modules:
+            importlib.import_module(f"{__name__}.{name}")
+
+
 from . import batch1, batch2, residual, advanced, roadmap, cards, counters, damage, dungeon, graveyard, mechanics, other, permanents, stats  # noqa: E402,F401  (registers the handlers)
 from . import phasing, ripple, manifest, demonstrate, amplify, mirrodin, prepare, cx_damage, cx_triggers, cx_effects, madness, unearth  # noqa: E402,F401  (registers the handlers)
 from . import cx_next_turn  # noqa: E402,F401

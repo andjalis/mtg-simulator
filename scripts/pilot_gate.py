@@ -155,8 +155,12 @@ def select_tests(changed, root):
         if not name.endswith(".py") or name.startswith("tests/"):
             continue
         stem = Path(name).stem
+        registration = re.fullmatch(r"mtgsim/cards/registry/\d{4}_(\w+)\.py", name)
+        if registration:        # a registration file only names what its module adds: that module's tests
+            stem = registration[1]
+            selected.add("tests/test_registry.py")
         related = [p for p in available if stem in p.stem]
-        if not related or name.startswith("mtgsim/cards/") or name.startswith("mtgsim/engine/"):
+        if not related or (name.startswith(("mtgsim/cards/", "mtgsim/engine/")) and not registration):
             return ["discover", "-s", "tests", "-t", "."]
         selected.update(str(p.relative_to(root)) for p in related)
     # No Python changes still gets a complete check; never silently run zero tests.

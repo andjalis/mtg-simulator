@@ -8,6 +8,8 @@ from .. import counting, this_way
 from ..cards import Effect
 from .state import Permanent, Player, StackItem
 from .kinds import HANDLERS, NO_SBA
+from . import kinds as _kinds
+_kinds.import_rest()     # kind modules with no import line in kinds/__init__.py
 
 
 def that_player_of(prev):

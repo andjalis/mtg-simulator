@@ -48,8 +48,9 @@ are the only way to big numbers. Deck relevance is only a tiebreaker.
 - Don't change the parse of cards that are already full unless it's a real fix; `scripts/parse_diff.py` shows it.
 - No card-name special cases when a general rule fits. Standard library only. Code must also run on Python 3.10
   (no backslashes inside f-string expressions, no 3.11+ only syntax or modules).
-- Stay in your lane's files (see AGENTS_LANES.md). Shared files: only one-line hooks (`cards/parse.py`) and
-  appended lines (`cards/__init__.py` join). Do not edit BACKLOG.md (the lead owns it).
+- Stay in your lane's files (see AGENTS_LANES.md). Shared files: only one-line hooks (`cards/parse.py`). A new
+  template module joins through its own file `mtgsim/cards/registry/NNNN_<module>.py` (CONTRIBUTING.md, "Adding a
+  template module"), never a line in `cards/__init__.py`, `engine/kinds/__init__.py` or `cards/face_lines.py`. Do not edit BACKLOG.md (the lead owns it).
 
 ## Commands (use the venv; the system python3 is 3.9 and can't import the package)
 Eight agents share one 10-core Mac. CPU-heavy checks MUST go through the shared queue `~/mtg-worktrees/bin/heavy`

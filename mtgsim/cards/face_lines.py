@@ -12,6 +12,26 @@ from .patterns import _parse_mana_ability
 from .parse import _apply_speed_gate, _mana_restriction, _parse_ability, _parse_effects, _parse_trigger
 
 
+# Line hooks from registration files (cards/registry, field LINE_HOOKS): {stage: [fn(line, st) -> handled]}. Each
+# stage runs at one fixed point of the parser named here, after the hooks written into that parser by hand, with the
+# parser's local state synced to st before and after.
+LINE_HOOK_STAGES = {
+    "special": "_face_special_lines, after its parse_line chains (ability words already stripped)",
+    "ward": "_face_mode_and_ward_lines, after bullet modes",
+    "static": "_face_cost_and_static_lines, after the chosen-colour statics",
+    "keyword": "_face_keyword_ability_lines, after the keyword costs (champion .. typecycling)",
+}
+LINE_HOOKS: dict = {stage: [] for stage in LINE_HOOK_STAGES}
+
+
+def _line_hooks(stage, line, st) -> bool:
+    """Run the registered hooks of stage; True once one of them handled the line."""
+    for hook in LINE_HOOKS[stage]:
+        if hook(line, st):
+            return True
+    return False
+
+
 class _FaceState:
     """What _parse_face has gathered so far for one face (its locals, shared with the line parsers)."""
 
@@ -195,6 +215,12 @@ def _face_special_lines(st, line):
         from .. import cx_replace, cx_top, cx_abilitycopy, cx_trigger_grants as _cx_trigger_grants, cx_grammar_crewblock as _cx_crewblock, cx_type_grants as _cx_type_grants, cx_static_chars as _cx_static_chars, cx_multi_target as _cx_multi_target, cx_discard_bf as _cx_discard_bf, cx_counter_choice as _cx_counter_choice, cx_name_lock as _cx_name_lock
         if cx_replace.parse_line(line, st) or cx_top.parse_line(line, st) or cx_abilitycopy.parse_line(line, st) or residual_templates.parse_line(line, st) or batch1_templates.parse_line(line, st) or advanced_templates.parse_line(line, st) or backlog_templates.parse_line(line, st) or permanent_templates.parse_line(line, st) or counter_mechanics.parse_line(line, st) or _creature_keywords.parse_line(line, st) or _alt_casts.parse_line(line, st) or _storage.parse_line(line, st) or _cx_trigger_grants.parse_line(line, st) or _cx_type_grants.parse_line(line, st) or _cx_static_chars.parse_line(line, st) or _cx_crewblock.parse_line(line, st) or _cx_multi_target.parse_line(line, st) or _cx_discard_bf.parse_line(line, st) or _cx_counter_choice.parse_line(line, st) or _cx_name_lock.parse_line(line, st):
             return None
+        if LINE_HOOKS["special"]:
+            st.gate, st.kicked = gate, kicked
+            handled = _line_hooks("special", line, st)
+            gate, kicked = st.gate, st.kicked
+            if handled:
+                return None
         parts = [p.strip().lower() for p in re.split(r",(?: and)? | and |,", line)]
         if all(p in KEYWORDS or re.fullmatch(r"(?:ward \{\d+\}|toxic \d+|bushido \d+)", p) for p in parts):
             for p in parts:
@@ -238,6 +264,12 @@ def _face_mode_and_ward_lines(st, line):
                 modal.add_mode(mode_sink, effs, bullet[0])
             return None
         mode_sink = None
+        if LINE_HOOKS["ward"]:
+            st.mode_sink, st.produces = mode_sink, produces
+            handled = _line_hooks("ward", line, st)
+            mode_sink, produces = st.mode_sink, st.produces
+            if handled:
+                return None
         m = re.fullmatch(r"Ward—Pay (\d+) life\.", line)
         if m:
             extra["ward_life"] = int(m[1])
@@ -908,6 +940,12 @@ def _face_cost_and_static_lines(st, line):
         if _cx_static_choice.parse_line(line, st):     # "choose a color other than C", chosen-colour statics
             enters_tapped = enters_tapped or st.enters_tapped
             return None
+        if LINE_HOOKS["static"]:
+            st.enters_tapped, st.produces = enters_tapped, produces
+            handled = _line_hooks("static", line, st)
+            enters_tapped, produces = st.enters_tapped, st.produces
+            if handled:
+                return None
         m = re.fullmatch(r"Activated abilities of artifact tokens you control cost \{(\d+)\} less to activate\.", line)
         if m:
             extra["token_ability_discount"] = int(m[1])
@@ -1110,6 +1148,12 @@ def _face_keyword_ability_lines(st, line):
         if spec is not None:
             extra["cycling"] = spec
             return None
+        if LINE_HOOKS["keyword"]:
+            st.unsupported = unsupported
+            handled = _line_hooks("keyword", line, st)
+            unsupported = st.unsupported
+            if handled:
+                return None
         m = re.fullmatch(r"Saddle (\d+)", line)
         if m:
             extra["saddle"] = int(m[1])

@@ -48,6 +48,25 @@ run. This policy does not bypass required CI, nightly checks or explicit task ac
 3. If CI fails later, the integrator or a notification will send it back; fix on the same branch.
 4. Keep PRs in your lane's files (see below) so batches merge without conflicts.
 
+### Adding a template module (no shared line to edit)
+
+A new mechanic module (`mtgsim/<name>.py` exporting `EFFECT_PATTERNS`, `SUBS`, `TRIGGERS`, `KEYWORDS`, ...) joins the
+parser through its own registration file, not through a line in `mtgsim/cards/__init__.py`: add
+`mtgsim/cards/registry/NNNN_<name>.py` that imports the module (`from ... import <name> as _<name>`) and names what
+it adds (`EFFECT_PATTERNS = _<name>.EFFECT_PATTERNS`, likewise `SUBS`, `TRIGGERS`, `KEYWORDS`, `PRIORITY_PATTERNS`,
+`FACE_LINE_PARSERS`). Files load in filename order and earlier patterns win, so take the next free number above
+the highest one (they step by ten; two branches picking the same number is fine, the name breaks the tie). A
+whole-line parser that used to be wired into `cards/face_lines.py` (`if _x.parse_line(line, st): return None`)
+goes in the same file as `LINE_HOOKS = {"keyword": (_<name>.parse_line,)}`; the stages (`special`, `ward`,
+`static`, `keyword`) are listed in `face_lines.LINE_HOOK_STAGES`. A new `mtgsim/engine/kinds/<name>.py` needs no
+import line at all: `engine/resolve.py` imports every kind module not yet loaded. `mtgsim/cards/registry/__init__.py`
+documents the fields; `tests/test_registry.py` checks names and fields.
+
+Converting an older PR that still appends to the tail of `cards/__init__.py` or `engine/kinds/__init__.py`: take
+`main`'s version of that file, then move the PR's appended `from .. import X as _X` / `_EFFECT_PATTERNS += ...`
+lines into a new registry file as above (drop the `engine/kinds/__init__.py` import line). Lines appended below
+`_registry.load_all(...)` still work during the transition, so keeping them there is an acceptable quick fix.
+
 ## For the integrator
 
 Once or twice a day, or when several PRs are open:
