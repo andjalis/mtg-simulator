@@ -139,7 +139,8 @@ class StackMixin:
                     continue    # "As ~ enters, roll ...": enter_battlefield already rolled
                 if trig.intervening_if and not self.check_cond(perm.controller,
                         Effect("condition", cond=trig.intervening_if),
-                        StackItem(perm.controller, [], [], source=perm, context=context), None):
+                        StackItem(perm.controller, [], [], source=perm, context=context if context is not None or
+                                  event != "permanent_enters" else subject), None):    # "if it ...": the one that entered
                     continue
                 if trig.data.get("trigger_gate") and not self.check_cond(perm.controller,
                         Effect("condition", cond=trig.data["trigger_gate"]),
