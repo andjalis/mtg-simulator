@@ -10,6 +10,10 @@ from .patterns import _N_WORDS
 
 # Substitutions below that simplify the card, and the note each one records on it.
 _SUB_NOTES = [
+    # Impulse draw (the IMPULSE sub below): the exiled cards are drawn, so they can be played after the window (#827)
+    (re.compile(r"exile the top (?:card|\w+ cards) of your library\. until (?:the end of your next turn|end of turn), you "
+                r"may play (?:that card|those cards)", re.I),
+     "impulse draw: the exiled cards are put into your hand, so they stay playable after the window"),
     (re.compile(r"counter target spell, activated ability, or triggered ability", re.I),
      "only spells are countered, not abilities"),
     (re.compile(r"target creature or planeswalker you control gains", re.I), "the target is a creature, not a planeswalker"),

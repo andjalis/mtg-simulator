@@ -527,6 +527,8 @@ def _face_land_and_mana_lines(st, line):
                 cols, amount = set(COLORS), _num(fixed[1])
                 if fixed[2] != "in any combination of colors":
                     approximations.append(f"\"Add {m[1]}\" may make any combination of colors")
+            if "could produce" in m[1]:     # Fellwar Stone, Exotic Orchard: played as any colour (#815)
+                approximations.append(f"\"Add {m[1]}\" makes any color")
             produces |= cols
             extra["mana_amount"] = max(amount, extra.get("mana_amount", 1))
             from ..mana_count import parse_dynamic

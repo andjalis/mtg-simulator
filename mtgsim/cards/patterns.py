@@ -266,7 +266,8 @@ _EFFECT_PATTERNS = wordings.patterns("core") + [
     (r"(?:all creatures|each creature) gets? -(\d+)/-(\d+) until end of turn",
      lambda m: Effect("debuff", int(m[1]), int(m[2]), target="each_creature")),
     (r"choose a creature type", lambda m: None),
-    (r"each player who controls a multicolored creature draws a card", lambda m: None),  # rarely matters
+    (r"each player who controls a multicolored creature draws a card",
+     lambda m: Effect("draw_each", 1, data={"multicolored_creature": True})),      # Depopulate (#833)
     (r"damage can't be prevented this turn", lambda m: None),
     (r"destroy all (artifacts|enchantments|lands)", lambda m: Effect("destroy_all", data={"type": m[1][:-1].capitalize()})),
     (r"enchanted creature gets \+(\d+)/\+(\d+) until end of turn", lambda m: Effect("pump", int(m[1]), int(m[2]), target="host")),
@@ -382,7 +383,10 @@ _EFFECT_PATTERNS = wordings.patterns("core") + [
      lambda m: _tapped(_token(m[1], m[2], m[3], m[4], m[5]))),
     (r"exile target nonland permanent(?: an opponent controls| you don't control)?(?: with mana value (\d+) or "
      r"less)? until ~ leaves the battlefield",
-     lambda m: Effect("oring", target="nonland_perm", filter=f"max_cmc:{m[1]}" if m[1] else "opp")),
+     lambda m: Effect("oring", target="nonland_perm", filter=f"max_cmc:{m[1]}" if m[1] else "opp",
+                      # Seam Rip, Portable Hole: the mana value filter replaced the opponent restriction (#824)
+                      data={"selector": {"controller": "opp"}} if m[1] and re.search(r"opponent controls|don't control",
+                                                                                     m[0]) else {})),
     (r"put a number of \+1/\+1 counters? on ~ equal to (.+)",
      lambda m: _add_xq(m[1], Effect("p1_counters", 1, target="self"))),
     # "At the beginning of your draw step, draw an additional card": one more than the turn's draw
