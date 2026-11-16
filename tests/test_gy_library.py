@@ -9,9 +9,11 @@ from tests.test_templates import ISLAND, card
 
 DB_FILE = Path(__file__).resolve().parents[1] / "mtgsim" / "data" / "cards.sqlite3"
 
-FULL = ("Archangel's Light", "Devious Cover-Up", "Elixir of Immortality", "Feldon's Cane", "Mnemonic Nexus",
-        "Perpetual Timepiece", "Piper's Melody", "Put Away", "Renewing Touch", "Stream of Thought",
-        "Struggle // Survive", "The Bath Song", "The Mending of Dominaria", "Wand of Vertebrae")
+FULL = ("Archangel's Light", "Elixir of Immortality", "Feldon's Cane", "Mnemonic Nexus", "Rooting Kavu",
+        "Stream of Thought", "Struggle // Survive", "The Mending of Dominaria")
+# "up to N / any number of target cards": chosen on resolution, recorded as an approximation
+SIMPLIFIED = ("Devious Cover-Up", "Perpetual Timepiece", "Piper's Melody", "Put Away", "Renewing Touch",
+              "The Bath Song", "Wand of Vertebrae")
 BEAR = card("Bear", "{1}{G}", "Creature — Bear", "", 2, 2)
 OGRE = card("Ogre", "{4}{R}", "Creature — Ogre", "", 5, 5)
 BOLT = card("Bolt", "{R}", "Instant", "Bolt deals 3 damage to any target.")
@@ -59,6 +61,14 @@ class Parse(unittest.TestCase):
 
 
 class Resolve(unittest.TestCase):
+    def test_moves_go_through_move_card(self):
+        g, a, b = game()
+        seen = []
+        orig = g.move_card
+        g.move_card = lambda card, src, dst, **kw: seen.append(kw.get("reason")) or orig(card, src, dst, **kw)
+        cast(g, a, ALL)
+        self.assertEqual(seen.count("gy_to_library"), 3)
+
     def test_all(self):
         g, a, b = game()
         cast(g, a, ALL)
@@ -99,6 +109,8 @@ class RealCards(unittest.TestCase):
         from mtgsim.coverage import card_coverage
         for name in FULL:
             self.assertEqual(card_coverage(self.db.get(name)).status, "full", name)
+        for name in SIMPLIFIED:
+            self.assertEqual(card_coverage(self.db.get(name)).status, "simplified", name)
 
     def test_elixir_of_immortality_goes_back_with_the_graveyard(self):
         g, a, b = game()

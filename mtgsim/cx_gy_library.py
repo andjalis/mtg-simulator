@@ -22,6 +22,8 @@ cards shuffled in ("You gain life equal to the number of cards shuffled ...").
 """
 from __future__ import annotations
 
+import re
+
 _N = {"one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7}
 _QUAL = (r"(?P<what>(?:(?:nonland|noncreature|creature|land|artifact|enchantment|instant|sorcery|planeswalker)"
          r"(?:,? (?:and|or) |, | )?)+ )?")
@@ -68,6 +70,18 @@ EFFECT_PATTERNS = [
 ]
 
 
+def _note():
+    """"Up to N / any number of target cards": recorded as an approximation, since the cards are chosen when the effect
+    resolves rather than targeted when it is put on the stack."""
+    from .cards import clauses
+    clauses._SUB_NOTES.append((re.compile(rf"shuffle (?:up to (?:one|two|three|four|five|six|seven)|any number of) target "
+                                          rf"{_QUAL}cards? from your graveyard into your library", re.I),
+                               "the graveyard cards are chosen on resolution, not targeted on cast"))
+
+
+_note()
+
+
 def _keep_value(card) -> tuple:
     """How much a card is worth keeping in the graveyard: ones with abilities there (flashback, unearth, escape ...)
     first, then by mana value."""
@@ -87,8 +101,7 @@ def resolve(game, p, eff, item=None):
         if d["n"] is not None:
             pool = sorted(pool, key=_keep_value)[:d["n"]]
         for card in pool:
-            who.graveyard.remove(card)
-            who.library.append(card)
+            game.move_card(card, who.graveyard, who.library, reason="gy_to_library")   # zone-change bookkeeping
         src = item.source if item is not None else None
         if d["self"] and who is p and isinstance(src, Permanent) and src in src.controller.battlefield:
             game.put_in_library(src, "shuffle")         # into its owner's library, shuffled
