@@ -114,6 +114,16 @@ class Spells(Base):
         self.assertTrue(self.cast(spell, [bear]))
         self.assertNotIn(bear, self.b.battlefield)
 
+    def test_delve_pays_only_the_fixed_x(self):
+        bear = self.perm(BEAR, self.b)
+        self.perm(SWAMP, self.a, 3)
+        self.a.graveyard = [ISLAND] * 5
+        spell = card("Test Delve Kill", "{X}{B}", "Sorcery", "Delve\nDestroy target creature with mana value X.")
+        self.assertTrue(self.cast(spell, [bear]))
+        self.assertNotIn(bear, self.b.battlefield)
+        paid = (3 - self.untapped_lands()) + len(self.a.exile)      # lands tapped + cards delved
+        self.assertEqual(paid, 3)            # X = 2 plus {B}, not the most delve could pay
+
     def test_x_or_less_group_uses_the_paid_x(self):
         bears = [self.perm(BEAR, self.b) for _ in range(2)]
         mine = self.perm(BEAR, self.a)

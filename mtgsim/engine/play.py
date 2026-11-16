@@ -152,7 +152,7 @@ class PlayMixin:
         convoked = self.convoke_pool(p)[:self._convoke_k] if card.convoke else []
         assisted = card.improvise or card.delve
         x = 0
-        if assisted and "X" in card.mana_cost:
+        if assisted and "X" in card.mana_cost and x_fixed is None:     # X fixed by a target (#403): no loop
             for n in range(1, 21):
                 trial = dict(cost, generic=cost.get("generic", 0) + max(0, n * card.mana_cost["X"] - x_off))
                 remaining, tapped, _ = self.assist_payment(p, card, trial)
