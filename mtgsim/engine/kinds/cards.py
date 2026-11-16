@@ -655,3 +655,10 @@ def conjure(game, p, eff, **_):
     if dest == "library" and eff.data.get("shuffle"):
         p.library.shuffle(game.rng)
     game.log(f"conjures {name} into {dest}" if dest != "battlefield" else f"conjures {name}", p)
+
+
+@kind("name_guess")
+def name_guess(game, p, eff, target=None, item=None, **_):
+    """"Choose a card name, then reveal / mill ... If that card has the chosen name, ..." (mtgsim.cx_card_name)."""
+    from ...cx_card_name import resolve
+    resolve(game, p, eff, target, item)
