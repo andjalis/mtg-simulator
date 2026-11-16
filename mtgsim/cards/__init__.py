@@ -270,6 +270,9 @@ from .. import cx_spent as _cx_spent  # noqa: E402
 _SUBS += _cx_spent.SUBS
 from .. import divided_prevent as _divided_prevent  # noqa: E402
 _EFFECT_PATTERNS += _divided_prevent.EFFECT_PATTERNS
+from .. import damage_reorder as _damage_reorder  # noqa: E402
+_SUBS += _damage_reorder.SUBS
+_EFFECT_PATTERNS += _damage_reorder.EFFECT_PATTERNS
 from .. import chance_each as _chance_each  # noqa: E402
 _SUBS += _chance_each.SUBS
 _EFFECT_PATTERNS += _chance_each.EFFECT_PATTERNS
@@ -287,3 +290,5 @@ from .. import cx_dmg_equal as _cx_dmg_equal  # noqa: E402  damage equal to a qu
 _EFFECT_PATTERNS += _cx_dmg_equal.EFFECT_PATTERNS
 from .. import cx_owner_library as _cx_owner_library  # noqa: E402  "put it on top of its owner's library" (#628)
 _EFFECT_PATTERNS += _cx_owner_library.EFFECT_PATTERNS
+from .. import spell_grants as _spell_grants  # noqa: E402  "the next spell you cast this turn has cascade" (#633)
+_EFFECT_PATTERNS += _spell_grants.EFFECT_PATTERNS
