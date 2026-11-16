@@ -309,3 +309,5 @@ _EFFECT_PATTERNS += _until_nonland.EFFECT_PATTERNS
 _SUBS += _until_nonland.SUBS
 from .. import another_target as _another_target  # noqa: E402  "another target creature you control" (#809)
 _SUBS += _another_target.SUBS
+from .. import cost_parts as _cost_parts  # noqa: E402  "{3}, {T} or {U}, {T}: ..." split costs (#859)
+_parse_module._FACE_LINE_PARSERS = (_cost_parts.face_line,) + _parse_module._FACE_LINE_PARSERS

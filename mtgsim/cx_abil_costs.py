@@ -46,7 +46,10 @@ def parse_part(part: str, extra: dict) -> bool:
         sel = selector(m[2], plural=n > 1)
         if sel is not None and n >= 1 and "controller" not in sel:
             spec = ("sacrifice_n", n, dict(sel))
-    if spec is None or spec[1] < 1:
+    if spec is None:
+        from .cost_parts import parse_part as more_parts     # or-pair / token-subtype sacrifices, ... (#859)
+        return more_parts(part, extra)
+    if spec[1] < 1:
         return False
     extra["cx_costs"] = extra.get("cx_costs", ()) + (spec,)
     return True
