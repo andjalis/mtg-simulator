@@ -44,7 +44,7 @@ class ParseDungeon(unittest.TestCase):
         self.assertEqual([e.kind for e in c.triggers[0].effects], ["take_initiative", "token"])
 
     def test_complete_dungeon_trigger(self):
-        self.assertEqual([t.event for t in SEFRIS.triggers], ["creature_dies", "complete_dungeon"])
+        self.assertEqual([t.event for t in SEFRIS.triggers], ["ev:card_to_gy", "complete_dungeon"])   # your graveyard, #785
         self.assertEqual([e.kind for e in SEFRIS.triggers[1].effects], ["reanimate_one"])
         self.assertEqual([t.event for t in LOOT_DISPUTE.triggers], ["etb", "complete_dungeon"])
 

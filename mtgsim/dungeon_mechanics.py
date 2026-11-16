@@ -271,8 +271,9 @@ TRIGGERS = [
     (r"Whenever a 6 is rolled on a six-sided die, (.+)", ("you_roll6",)),
     (r"When you roll a natural 20, (.+)", ("you_roll20",)),
     (r"Whenever ~ becomes untapped, (.+)", ("becomes_untapped",)),
-    (r"Whenever one or more creature cards are put into your graveyard from anywhere, (.+)",
-     ("creature_dies",)),
+    # "Whenever one or more creature cards are put into your graveyard from anywhere" is read by the trigger
+    # grammar (cx_trig_events.gy_head: card_to_gy, your graveyard, one batch); mapping it to creature_dies here
+    # counted any creature dying on either side and no milled / discarded card (#785).
     # "As ~ enters, roll a die.": a roll the entering permanent makes itself (an ETB
     # trigger; the counters arrive just after entering, which 0/0 bodies would not survive).
     (r"As ~ enters, (.+)", ("etb",)),
