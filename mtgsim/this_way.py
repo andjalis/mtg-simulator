@@ -28,10 +28,13 @@ import json
 import re
 
 _DESTROY_KINDS = ("destroy", "wrath")       # effect kinds whose battlefield-to-graveyard moves are destructions
+_SAC_KINDS = ("sac", "edict")               # ... and sacrifices ("sac_own", "edict_each", a player's "sacrifices")
 _VERBS = {"exiled": "exiled", "milled": "milled", "discarded": "discarded", "destroyed": "destroyed",
           "put into your graveyard": "gy_yours", "put into their graveyard": "gy", "put into a graveyard": "gy",
-          "put into graveyards": "gy", "put into that player's graveyard": "gy"}
-_VERB_RX = r"(exiled|milled|discarded|destroyed|put into (?:your|their|a|that player's) graveyards?|put into graveyards)"
+          "put into graveyards": "gy", "put into that player's graveyard": "gy", "sacrificed": "sacrificed",
+          "sacrifice": "sacrificed"}
+_VERB_RX = r"(exiled|milled|discarded|destroyed|sacrificed|put into (?:your|their|a|that player's) graveyards?|" \
+    r"put into graveyards)"
 
 
 # ----------------------------------------------------------------------------------------------- the journal
@@ -65,7 +68,8 @@ def _ensure(game):
 def _reads(eff) -> bool:
     """Whether eff reads "this way" (its condition or its counted amount): it then keeps the journal it reads."""
     xq = eff.data.get("xq") if isinstance(eff.data, dict) else None
-    return '"this_way"' in (eff.cond or "") or (isinstance(xq, tuple) and len(xq) > 1 and xq[:2] == ("cxq", "tw"))
+    return '"this_way"' in (eff.cond or "") or (isinstance(xq, tuple) and len(xq) > 1 and xq[:2] == ("cxq", "tw")) \
+        or bool(isinstance(eff.data, dict) and eff.data.get("tw_keep"))
 
 
 def start(game, item, eff):
@@ -83,8 +87,16 @@ def start(game, item, eff):
     if getattr(item, "tw_journal", None) is None or getattr(item, "tw_read", False):
         item.tw_journal = []
         item.tw_read = False
-    item.tw_kind = eff.kind if eff.kind != "group_remove" else "destroy" if eff.data.get("op") == "destroy" else \
-        eff.kind
+    kinds = [eff.kind] + [e.kind for e in eff.data.get("effects", ()) if hasattr(e, "kind")] \
+        if isinstance(eff.data, dict) else [eff.kind]
+    if eff.kind == "group_remove":
+        kinds = ["destroy" if eff.data.get("op") == "destroy" else eff.kind]
+    item.tw_kind = "|".join(kinds)      # a wrapper (cx_players) names its inner kinds: "each player sacrifices"
+    if getattr(item, "cost_sacrificed", None) and not getattr(item, "tw_cost_done", False):
+        # the permanents sacrificed to pay for an activated ability: "If a Saproling was sacrificed this way"
+        item.tw_cost_done = True
+        item.tw_journal += [{"card": c, "from": "battlefield", "to": "graveyard", "owner": getattr(c, "owner", None),
+                             "controller": None, "kind": "sac_cost"} for c in item.cost_sacrificed]
 
 
 def note_damage(game, target, amount):
@@ -101,11 +113,15 @@ def _entries(journal, verb, owner_name=None):
         if "damaged" in e:
             continue
         frm, to = e["from"], e["to"]
+        kinds = e["kind"].split("|")
         ok = {"exiled": to == "exile", "milled": frm == "library" and to == "graveyard",
               "discarded": frm == "hand" and to == "graveyard", "gy": to == "graveyard",
-              "gy_yours": to == "graveyard",
-              "destroyed": frm == "battlefield" and to == "graveyard" and e["kind"].startswith(_DESTROY_KINDS)}[verb]
-        if ok and (verb != "gy_yours" or getattr(e["owner"], "name", None) == owner_name):
+              "gy_yours": to == "graveyard", "hand": to == "hand",
+              "destroyed": frm == "battlefield" and to == "graveyard" and any(k.startswith(_DESTROY_KINDS)
+                                                                              for k in kinds),
+              "sacrificed": frm == "battlefield" and to == "graveyard" and any(k.startswith(_SAC_KINDS) or
+                                                                               "_sac" in k for k in kinds)}[verb]
+        if ok and (verb not in ("gy_yours",) or getattr(e["owner"], "name", None) == owner_name):
             out.append(e)
     return out
 
@@ -133,7 +149,7 @@ def _cond_filter(words: str, verb: str):
     words = re.sub(r" card$", "", words)
     if words in ("card", ""):
         return {}
-    if verb != "destroyed" and words in ("permanent",):
+    if verb not in ("destroyed", "sacrificed") and words in ("permanent",):
         return None
     return _filter(words, plural=False)
 
@@ -145,12 +161,21 @@ def parse_cond(phrase: str) -> str:
     yours = False
     m = re.fullmatch(rf"(?:a|an|at least one|one or more) (?P<f>[\w' -]+?) (?:is|was|were|are) {_VERB_RX} this way", p,
                      re.I)
+    hand = re.fullmatch(r"you (?P<neg>didn't )?put (?:a|an|one or more) (?P<f>[\w' -]+?) into your hand this way", p,
+                        re.I)
+    if hand:        # "If you put an artifact card into your hand this way" / "If you didn't put a card into ..."
+        spec = _cond_filter(hand["f"], "hand")
+        if spec is None or (hand["neg"] and spec):
+            return ""
+        code = "lib:" + json.dumps(["this_way", "hand", spec, "you"])
+        return "lib:" + json.dumps(["not", code]) if hand["neg"] else code
     if m is None:
-        m = re.fullmatch(r"you (?P<v>exiled|milled|discarded) (?:a|an|one or more) (?P<f>[\w' -]+?) this way", p, re.I)
+        m = re.fullmatch(r"you (?P<v>exiled|milled|discarded|sacrificed|sacrifice) (?:a|an|one or more) "
+                         r"(?P<f>[\w' -]+?) this way", p, re.I)
         if m:
             verb = m["v"].lower()
-            yours = verb in ("milled", "discarded")     # "you discarded a card": one of your cards (not another
-            # player's discard in "each player discards a card"); "you exiled": your own effect did it
+            yours = verb in ("milled", "discarded", "sacrificed", "sacrifice")  # "you discarded a card": one of your
+            # cards (not another player's in "each player discards a card"); "you exiled": your own effect did it
         else:
             d = re.fullmatch(r"(?:a|an) (?P<f>[\w' -]+?) is dealt damage this way", p, re.I)
             if d is None:
@@ -185,41 +210,82 @@ def check(game, p, args, item, prev=None) -> bool:
 # ----------------------------------------------------------------------------------------------- quantities
 
 def parse_quantity(text: str):
-    """("cxq", "tw", verb, spec[, stat]) for "the number of creature cards milled this way" / "... exiled this way" /
-    "... put into their graveyard this way", or None."""
+    """("cxq", "tw", verb, spec, opts) for "the number of creature cards milled this way" / "... exiled this way" /
+    "... put into their graveyard this way" / "the number of nonartifact creatures destroyed this way" / "the number
+    of creatures you controlled that were destroyed this way", or None."""
     from .cx_condlib import _filter
     t = re.sub(r"\s+", " ", text.strip().rstrip("."))
-    m = re.fullmatch(rf"the number of (?P<f>[\w' -]+?) {_VERB_RX} this way", t, re.I)
+    m = re.fullmatch(rf"the number of (?P<f>[\w' -]+?)(?P<ctl> you controlled that (?:were|was))? {_VERB_RX} this way",
+                     t, re.I)
     if m is None:
         return None
-    verb = _VERBS.get(m[2].lower())
+    verb = _VERBS.get(m[3].lower())
     words = m["f"]
-    if not _known_words(words):
+    if verb is None or not _known_words(words):
         return None
-    if re.fullmatch(r"cards", words, re.I):
+    opts = {"ctl": bool(m["ctl"])}
+    if re.fullmatch(r"cards?", words, re.I):
         spec = {}
-    else:
-        c = re.fullmatch(r"(.+?) cards", words, re.I)
-        if c is not None and verb in ("destroyed", "sacrificed"):
+    elif re.fullmatch(r"(.+?) cards?", words, re.I):     # "creature cards" (or a caller's singular "creature card")
+        if verb in ("destroyed", "sacrificed"):
             return None     # permanents are destroyed, not cards: "creature cards destroyed this way" is malformed
-        if c is None:
-            if verb != "destroyed":
-                return None
-            d = re.fullmatch(r"(creatures|artifacts|enchantments|lands|permanents|planeswalkers)", words, re.I)
-            if d is None:
-                return None
-            spec = {"types": [d[1].lower()[:-1]]} if d[1].lower() != "permanents" else {}
-        else:
-            spec = _filter(c[1], plural=False)
-            if spec is None:
-                return None
-    if verb is None:
+        spec = _filter(re.fullmatch(r"(.+?) cards?", words, re.I)[1], plural=False)
+    else:
+        # permanents ("creatures", "nonartifact creatures", "nontoken creatures"): they left the battlefield
+        if verb not in ("destroyed", "exiled", "sacrificed") or not words.lower().endswith("s"):
+            return None     # a singular "permanent" comes from callers with their own "sacrificed this way" reading
+        spec = {} if words.lower() == "permanents" else _filter(words, plural=True)
+        opts["bf"] = True
+    if spec is None or opts["ctl"] and not opts.get("bf"):
         return None
-    return ("cxq", "tw", verb, spec)
+    return ("cxq", "tw", verb, spec, opts)
+
+
+# "<effect> for each <thing> <verb> this way": the effect with an amount of one, its last part counted
+_SCALABLE = {"p1_counters", "token", "draw", "gain_life", "lose_life", "drain", "mill", "discard", "add_mana",
+             "incubate", "cx_card_choose"}
+
+
+def _for_each(m):
+    from .cards import _parse_effects
+    from .cards.model import NO_MATCH
+    from .cx_grammar import _count_spec
+    from .cx_grammar import parse_sentence
+    spec = _count_spec(m["d"])
+    if not (isinstance(spec, tuple) and (spec[:2] == ("cxq", "tw") or spec[0] == "this_way")) or parse_sentence(m[0]):
+        return NO_MATCH         # the effect grammar reads it (it runs after the templates): leave it that way
+    body = m["body"].strip().rstrip(",")
+    effects, bad = _parse_effects(body[0].upper() + body[1:] + ".")
+    if bad or not effects:
+        return NO_MATCH
+    last = effects[-1]
+    if last.target == "prev":
+        return NO_MATCH     # "then put a +1/+1 counter on it": "it" (a token just created) isn't reached here
+    inner = last.data.get("effects") if last.kind == "cx_players" else [last]
+    if not inner or any(e.kind not in _SCALABLE or e.amount != 1 or e.data.get("x") or e.data.get("xq")
+                        for e in inner) or last.data.get("xq") or last.data.get("x"):
+        return NO_MATCH
+    import dataclasses
+    # "Create a Thopter token, then put a +1/+1 counter on it for each card put into your graveyard this way": the
+    # sentence's earlier parts don't start a journal of their own, so the count still reads the effect before it
+    keep = [dataclasses.replace(e, data=dict(e.data, tw_keep=True)) for e in effects[:-1]]
+    return keep + [dataclasses.replace(last, data=dict(last.data, xq=spec))]
+
+
+EFFECT_PATTERNS = [
+    (r"(?P<body>.+?),? for each (?P<d>[\w' -]+? (?:exiled|milled|discarded|destroyed|sacrificed|"
+     r"put into (?:your|their|a|that player's) graveyard) this way)", _for_each),
+]
 
 
 def value(game, p, spec, item) -> int:
     """How many journal entries of the previous effect fit (cx_grammar_quantity.value)."""
     _, _, verb, card_spec = spec[:4]
+    opts = spec[4] if len(spec) > 4 else {}
     journal = getattr(item, "tw_journal", None) or []
-    return sum(1 for e in _entries(journal, verb, getattr(p, "name", None)) if _fits(e, card_spec))
+    entries = _entries(journal, verb, getattr(p, "name", None))
+    if opts.get("bf"):
+        entries = [e for e in entries if e["from"] == "battlefield"]
+    if opts.get("ctl"):         # "creatures you controlled that were destroyed this way": as they last existed
+        entries = [e for e in entries if e.get("controller") == getattr(p, "name", None)]
+    return sum(1 for e in entries if _fits(e, card_spec))

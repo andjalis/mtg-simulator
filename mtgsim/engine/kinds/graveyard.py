@@ -36,10 +36,11 @@ def dig_gy(game, p, eff, **_):
     for c in keep:
         rest.remove(c)
         game.move_card(c, p.library, p.hand, reason="dig")
+    exile = eff.data.get("rest") == "exile"         # Browse: "... and exile the rest" (#346)
     for c in rest:
-        game.move_card(c, p.library, p.graveyard, reason="dig")
+        game.move_card(c, p.library, p.exile if exile else p.graveyard, reason="dig")
     if keep or rest:
-        game.log(f"digs {n}, keeps {len(keep)}, mills {len(rest)}", p)
+        game.log(f"digs {n}, keeps {len(keep)}, {'exiles' if exile else 'mills'} {len(rest)}", p)
 
 
 def _filter_desc(desc: str) -> str:

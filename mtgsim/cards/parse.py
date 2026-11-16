@@ -49,6 +49,10 @@ def _parse_effects(text: str, opts: bool = False):
         s = sentence.strip().rstrip(".").strip()
         if not s:
             continue
+        if effects and effects[-1].kind == "cx_turn_trigger":     # a "this turn" trigger's later sentences (#399)
+            from ..cx_trig_turn import more
+            if more(s, effects, unmatched):
+                continue
         starts.append(len(effects))  # where each sentence's effects begin ("instead" replaces the one before)
         mark(effects, pending)       # "until your next turn" / "player or planeswalker" (cx_next_turn)
         s, kind = rewrite(s)
