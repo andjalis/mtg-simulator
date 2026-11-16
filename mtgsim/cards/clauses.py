@@ -131,7 +131,7 @@ _SUBS = [
     (re.compile(r"if (?:this spell|~) was cast from a graveyard, exile it, then put it onto the battlefield transformed "
                 r"under its owner's control with a finality counter on it\.", re.I), lambda m: "FLIPFROMGY."),
     (re.compile(r"reveal the top card of your library\. if it's an? (permanent|land|creature) card, put it into your "
-                r"hand\.", re.I), lambda m: f"REVEALTOP {m[1].lower()}."),
+                r"hand\.(?! otherwise\b)", re.I), lambda m: f"REVEALTOP {m[1].lower()}."),    # "Otherwise, ...": cx_links
     (re.compile(r"destroy target nonbasic land an opponent controls\. that land's controller may search their library for "
                 r"a basic land card, put it onto the battlefield, then shuffle\. you may search your library for a basic "
                 r"land card, put it onto the battlefield, then shuffle\.", re.I), lambda m: "BOTHLANDSWAP."),

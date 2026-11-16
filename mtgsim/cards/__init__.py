@@ -257,17 +257,27 @@ from .. import card_referent as _card_referent
 _EFFECT_PATTERNS += _card_referent.EFFECT_PATTERNS
 from .. import cx_attach as _cx_attach
 _EFFECT_PATTERNS += _cx_attach.EFFECT_PATTERNS
+_EFFECT_PATTERNS += _that_much.LATE_PATTERNS  # "~ deals that much damage to <any recipient>" (#626)
 from .. import cx_replace_amounts as _cx_replace_amounts       # counter-amount replacements (#407)
 _parse_module._FACE_LINE_PARSERS = (_cx_replace_amounts.face_line,) + _parse_module._FACE_LINE_PARSERS
 from .. import cx_static_cost as _cx_static_cost  # one-shot spell-group discounts (#341)
 _EFFECT_PATTERNS += _cx_static_cost.EFFECT_PATTERNS
+from .. import this_way as _this_way  # noqa: E402  "<effect> for each <thing> <verb> this way" (#642)
+_EFFECT_PATTERNS += _this_way.EFFECT_PATTERNS
 from .. import cx_exile_play as _cx_exile_play          # "exile the top card of that player's library" (#316)
 _EFFECT_PATTERNS += _cx_exile_play.EFFECT_PATTERNS
 _SUBS += _cx_exile_play.SUBS
 from .. import linked_exile as _linked_exile  # noqa: E402
 _EFFECT_PATTERNS += _linked_exile.EFFECT_PATTERNS
+from .. import cx_trig_turn as _cx_trig_turn  # noqa: E402
+_EFFECT_PATTERNS += _cx_trig_turn.EFFECT_PATTERNS
 from .. import cx_spent as _cx_spent  # noqa: E402
 _SUBS += _cx_spent.SUBS
+from .. import library_peek as _library_peek  # noqa: E402
+_EFFECT_PATTERNS += _library_peek.EFFECT_PATTERNS
+_SUBS += _library_peek.SUBS
+from .. import cx_ifpos as _cx_ifpos  # noqa: E402
+_SUBS += _cx_ifpos.SUBS
 from .. import damage_reorder as _damage_reorder  # noqa: E402
 _SUBS += _damage_reorder.SUBS
 _EFFECT_PATTERNS += _damage_reorder.EFFECT_PATTERNS
@@ -290,5 +300,8 @@ from .. import cx_owner_library as _cx_owner_library  # noqa: E402  "put it on t
 _EFFECT_PATTERNS += _cx_owner_library.EFFECT_PATTERNS
 from .. import spell_grants as _spell_grants  # noqa: E402  "the next spell you cast this turn has cascade" (#633)
 _EFFECT_PATTERNS += _spell_grants.EFFECT_PATTERNS
+from .. import until_nonland as _until_nonland  # noqa: E402  "exile until a nonland card, you may cast it" (#625)
+_EFFECT_PATTERNS += _until_nonland.EFFECT_PATTERNS
+_SUBS += _until_nonland.SUBS
 from .. import cx_grammar_edicts as _cx_grammar_edicts  # noqa: E402  "chooses N ..., then sacrifices the rest" (#631)
 _SUBS += _cx_grammar_edicts.SUBS

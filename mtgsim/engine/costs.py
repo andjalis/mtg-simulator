@@ -615,6 +615,8 @@ class CostsMixin:
             n += pending[1]             # "the next spell you cast this turn costs {N} less" (Peerless Samurai)
         from ..batch1_templates import spell_tax
         more = spell_tax(self, p, card)             # increases: taxes and "or pay {N}" additional costs
+        from ..cx_name_lock import named_tax
+        more += named_tax(self, card)               # "Spells with the chosen name cost {3} more" (#627)
         if card.extra_discard and card.discard_or_pay and self.spare_cards(p, card) < 1:
             more += card.discard_or_pay
         if card.behold_or_pay:
