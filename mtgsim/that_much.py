@@ -47,6 +47,8 @@ def _damage(m):
         return Effect("cx_damage", 0, data={"that_much": True, "source": "self", "side": "theirs", "who": "you"})
     target = "any" if who in ("any target", "any other target") else "creature" if who == "target creature" else "player"
     data = {"that_much": True}
+    if who == "target creature an opponent controls":     # Mordant Dragon (#319): the opponent's creature
+        return Effect("damage", 0, target="creature", filter="opp", data=data)
     if who == "any other target":
         data["other"] = True
     return Effect("damage", 0, target=target, data=data)
@@ -98,7 +100,7 @@ EFFECT_PATTERNS = [
     (r"discard that many cards", _that_much("discard")),
     (r"(?:target|each) opponent loses that much life", _that_much("drain", target="each_opponent")),
     (r"(~|it|he|she) deals that much damage to (any target|any other target|you|target opponent|target player|"
-     r"each opponent|each other opponent|each player|target creature)", _damage),
+     r"each opponent|each other opponent|each player|target creature an opponent controls|target creature)", _damage),
 ]
 
 TRIGGERS = [

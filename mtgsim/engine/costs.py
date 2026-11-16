@@ -625,8 +625,11 @@ class CostsMixin:
         if card.extra_sac_or_pay and not self.extra_sac_candidates(p, card):
             more += card.extra_sac_or_pay
         # 601.2f: the total cost is the mana cost plus every increase, then every reduction
-        from ..cx_spell_costs import add_mana as add_cost_mana      # "... or pay {3}{B}" additional costs (#342)
-        cost = cx_static_cost.adjust(self, p, card, add_cost_mana(self, p, card, cost), increase=more, reduction=n)
+        from ..cx_spell_costs import add_mana as add_cost_mana, reduction as add_cost_reduction    # #342
+        cost = cx_static_cost.adjust(self, p, card, add_cost_mana(self, p, card, cost), increase=more,
+                                    reduction=n + add_cost_reduction(self, p, card))
+        from ..cx_spell_costs import defiler_discount
+        cost = defiler_discount(self, p, card, cost)     # "you may pay 2 life ... cost {B} less" (Defilers, #342)
         if pay_as.convoke:
             self._convoke_k = min(len(self.convoke_pool(p)), cost.get("generic", 0))
             cost["generic"] -= self._convoke_k

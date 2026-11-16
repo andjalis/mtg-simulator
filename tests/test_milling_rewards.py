@@ -112,8 +112,8 @@ class MillingRewards(unittest.TestCase):
 
     def test_unknown_reward_or_condition_remains_visible(self):
         for text in ("If a Lesson card was milled this way, you may cast a copy of it.",
-                     "You gain 2 life if cards with different names were milled this way.",
-                     "If a noncreature card was milled this way, you gain 2 life."):
+                     "You gain 2 life if cards with different names were milled this way."):
+            # "If a noncreature card was milled this way" is read by mtgsim.this_way since #642 (test_this_way)
             with self.subTest(text=text):
                 self.assertTrue(card("Test Unsupported", types="Sorcery", text=text).unsupported)
 

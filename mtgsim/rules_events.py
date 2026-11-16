@@ -102,6 +102,11 @@ def _cx_exiles(game, permanent):
     return exiles(game, permanent)
 
 
+def _cx_die_dest(permanent):
+    from .cx_replace import die_destination     # "If ~ would die, put it on top of its owner's library instead."
+    return die_destination(permanent)
+
+
 def zone_destination(game, permanent, destination):
     """The supported battlefield-to-graveyard replacements; no printed-text guesses."""
     def to_exile(intent):
@@ -116,6 +121,8 @@ def zone_destination(game, permanent, destination):
                     any(x.card.exile_damaged for x in game.opponent(permanent.controller).battlefield), to_exile),
         Replacement("would-die-exile", lambda e: e.destination == "graveyard" and _cx_exiles(game, permanent),
                     to_exile),
+        Replacement("would-die-elsewhere", lambda e: e.destination == "graveyard" and _cx_die_dest(permanent),
+                    lambda e: replace(e, destination=_cx_die_dest(permanent))),
         # "If it would leave the battlefield, exile it instead of putting it anywhere else" (cx_replace_zones)
         Replacement("leave-exile", lambda e: e.destination != "exile" and getattr(permanent, "exile_on_leave", False),
                     to_exile),

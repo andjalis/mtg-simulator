@@ -4,7 +4,7 @@ import random
 import unittest
 from pathlib import Path
 
-from mtgsim.engine import Game, Player
+from mtgsim.engine import Game, Player, StackItem
 from mtgsim.cx_attack_refs import rewrite
 from tests.test_combat_triggers import Scripted
 from tests.test_templates import ISLAND, card
@@ -19,13 +19,14 @@ class Rewrite(unittest.TestCase):
         cases = {
             "Whenever one or more creatures you control attack, they gain indestructible until end of turn.":
             "Whenever one or more creatures you control attack, each attacking creature you control gains "
-            "indestructible until end of turn.",
+            "indestructible until end of turn. DECLAREDATTACKERS.",
             "Whenever you attack with one or more other creatures with flying, those creatures get +2/+2 until end "
             "of turn.":
             "Whenever you attack with one or more other creatures with flying, each other attacking creature you "
-            "control with flying gets +2/+2 until end of turn.",
+            "control with flying gets +2/+2 until end of turn. DECLAREDATTACKERS.",
             "Whenever you attack with one or more Insects, put a +1/+1 counter on each of them.":
-            "Whenever you attack with one or more Insects, put a +1/+1 counter on each attacking Insect you control.",
+            "Whenever you attack with one or more Insects, put a +1/+1 counter on each attacking Insect you control. "
+            "DECLAREDATTACKERS.",
         }
         for line, want in cases.items():
             self.assertEqual(rewrite(line), want)
@@ -91,6 +92,24 @@ class Combat(unittest.TestCase):
         bug, home_bug, bear = self.bear(subtype="Insect"), self.bear(subtype="Insect"), self.bear()
         self.fight([bug, bear])
         self.assertEqual((bug.p1, home_bug.p1, bear.p1), (1, 0, 0))
+
+    def test_a_creature_put_onto_the_battlefield_attacking_is_not_one_of_them(self):
+        guardian = card("Test Guardian", "{4}", "Creature — Angel", "Whenever one or more creatures you control "
+                        "attack, they gain indestructible until end of turn.", 2, 4)
+        self.put(self.a, guardian)
+        x = self.bear()
+        effects = list(guardian.triggers[0].effects)
+        self.g.step = "declare_attackers"
+        self.a.ai.attack = [x]
+        self.g.attackers = [x]
+        x.attack_count = (self.g.turn, 1)                 # declared (stack.py stamps this when "attacks" fires)
+        token = self.g.enter_battlefield(self.a, card("Soldier", "{0}", "Creature — Soldier", "", 1, 1),
+                                         tapped_attacking=True)
+        self.g.stack.append(StackItem(self.a, effects, [None] * len(effects), name="guardian"))
+        self.g.resolve_top()
+        self.assertTrue(x.has("indestructible"))
+        self.assertIn(token, self.g.attackers)
+        self.assertFalse(token.has("indestructible"))
 
 
 @unittest.skipUnless(DB_FILE.exists(), "card database not built")

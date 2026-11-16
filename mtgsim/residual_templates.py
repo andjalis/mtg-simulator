@@ -168,7 +168,8 @@ def parse_line(line, st):
     if m:
         st.extra.setdefault('advanced_rules', {})['miracle'] = parse_mana_cost(m[1])
         return True
-    return False
+    from .entry_statics import parse_line as entry_static_line     # "<group> enter tapped / with counters" (#630)
+    return entry_static_line(line, st)
 
 
 def parse_effect(text):

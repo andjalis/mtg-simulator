@@ -134,7 +134,40 @@ def _suffix_if(m):
     return dataclasses.replace(eff, cond=eff.cond or cond)
 
 
+# "a +1/+1 counter, a flying counter, and a lifelink counter": several kinds on one object (keyword counters may be two
+# words: "first strike", "double strike")
+_KIND = rf"{_NUMBER} (?:{_COUNTER}|first strike|double strike) counters?"
+_KIND_ONE = re.compile(rf"(?P<n>{_NUMBER}) (?P<k>{_COUNTER}|first strike|double strike) counters?", re.I)
+
+
+def _kinds(m):
+    """"Put <N kind counters>, <N kind counters>, and <N kind counters> on <obj>": every kind on the same object,
+    the first placement choosing it (a target is one target) and the others on that object ("prev")."""
+    from .cards.model import NO_MATCH
+    parts = [x for x in re.split(r",? and |, ", m["list"]) if x]
+    obj = _obj(m["obj"])
+    if len(parts) < 2 or obj is None or re.search(r"\b(?:if|unless|for each|where|equal to)\b", m["obj"], re.I):
+        return NO_MATCH
+    out = []
+    for i, part in enumerate(parts):
+        km = _KIND_ONE.fullmatch(part.strip())
+        if km is None:
+            return NO_MATCH
+        n, kind = _num(km["n"]), km["k"].lower()
+        if i == 0:
+            eff = _place(obj, n, kind)
+            if eff is NO_MATCH or eff.kind != "add_counter" or eff.target not in ("permanent", "prev", "self", "host"):
+                return NO_MATCH         # one object only: a group ("each creature you control") has no single "it"
+            first = eff
+        else:
+            from .cards.model import Effect
+            eff = Effect("add_counter", n, target="self" if first.target == "self" else "prev", data={"counter": kind})
+        out.append(eff)
+    return out
+
+
 EFFECT_PATTERNS = [
+    (rf"put (?P<list>{_KIND}(?:, (?:and )?{_KIND})+|{_KIND} and {_KIND}) on (?P<obj>.+)", _kinds),
     (rf"put (?P<n>{_NUMBER}) (?P<k>{_COUNTER}) counters? on (?P<obj>.+?) if (?P<cond>.+)", _suffix_if),
     (rf"put (?P<n>{_NUMBER}) (?P<k>{_COUNTER}) counters? on (?P<rest>.+)", _coordinated),
 ]
