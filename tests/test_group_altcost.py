@@ -106,6 +106,48 @@ class HeuristicUse(Base):
 
 
 @unittest.skipUnless(DB_FILE.exists(), "card database not built")
+class RealOmniscience(Base):
+    """The real Omniscience plays right (CR 118.9): the spell costs nothing, X is 0, additional costs still apply."""
+    BLAZE = card("Test Blaze", "{X}{R}", "Sorcery", "~ deals X damage to any target.")
+    FEAST = card("Test Feast", "{4}{B}", "Sorcery",
+                 "As an additional cost to cast this spell, sacrifice a creature.\nDraw two cards.")
+
+    def setUp(self):
+        super().setUp()
+        from mtgsim.carddb import CardDB
+        self.a.battlefield = [Permanent(CardDB(offline=True).get("Omniscience"), self.a)]
+
+    def free(self, c):
+        self.a.hand = [c]
+        options = [v for v in self.game.spell_options(self.a) if "group_alt" in v.name]
+        self.assertEqual(len(options), 1, c.name)
+        return options[0]
+
+    def test_ai_casts_a_big_spell_for_nothing(self):
+        lands = [self.perm(ISLAND, self.a) for _ in range(3)]
+        self.a.hand = [TITAN]
+        self.a.ai.main_phase(self.game, self.a)
+        self.assertIn("Test Titan", [x.card.name for x in self.a.creatures])
+        self.assertFalse(any(x.tapped for x in lands))          # no mana paid
+
+    def test_x_is_zero(self):
+        lands = [self.perm(MOUNTAIN, self.a) for _ in range(3)]
+        self.assertTrue(self.game.cast(self.a, self.free(self.BLAZE), [self.b]))
+        self.game.settle()
+        self.assertEqual(self.b.life, 20)                       # X = 0 under an alternative cost
+        self.assertFalse(any(x.tapped for x in lands))
+
+    def test_additional_cost_still_paid(self):
+        self.assertFalse(self.game.cast(self.a, self.free(self.FEAST), []))     # no creature to sacrifice
+        bear = self.perm(BEAR, self.a)
+        self.a.library = [ISLAND] * 5
+        self.assertTrue(self.game.cast(self.a, self.free(self.FEAST), []))
+        self.game.settle()
+        self.assertNotIn(bear, self.a.battlefield)
+        self.assertEqual(len(self.a.hand), 2)
+
+
+@unittest.skipUnless(DB_FILE.exists(), "card database not built")
 class RealCards(unittest.TestCase):
     def test_statuses(self):
         from mtgsim.carddb import CardDB

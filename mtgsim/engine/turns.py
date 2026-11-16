@@ -227,6 +227,9 @@ class TurnsMixin:
             return
         for card in list(p.hand):
             spec = card.cycling
+            if not spec:
+                from ..zone_grants import cycling as granted_cycling     # "<cards> in your hand have cycling" (#633)
+                spec = granted_cycling(self, p, card)
             if not spec or card not in p.hand or self.over:
                 continue
             lands = sum(x.card.is_land for x in p.battlefield)
