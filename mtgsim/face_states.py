@@ -113,3 +113,22 @@ def turn_down(game, perm) -> bool:
     game.log(f"turns {perm.card.name} face down", perm.controller)
     perm.hidden, perm.card = perm.card, _face_down_def()
     return True
+
+
+
+# ------------------------------------------------------------------ face-down cost reductions
+
+_DISCOUNT = re.compile(r"(?P<first>The first )?[Ff]ace-down creature spells? you cast(?P<each> each turn)? costs? "
+                       r"\{(?P<n>\d+)\} less to cast\.")
+
+
+def face_line(st, line):
+    """"Face-down creature spells you cast cost {1} less to cast." (Dream Chisel, Obscuring Aether) and "The first
+    face-down creature spell you cast each turn costs {3} less to cast." (Kadena): cost_discount entries Game.cost_of
+    applies to a spell cast face down (#635)."""
+    m = _DISCOUNT.fullmatch(line)
+    if m and bool(m["first"]) == bool(m["each"]):
+        flt = "face_down_first" if m["first"] else "face_down"
+        st.extra["cost_discount"] = st.extra.get("cost_discount", ()) + ((flt, int(m["n"])),)
+        return None
+    return line

@@ -306,3 +306,4 @@ _SUBS += _until_nonland.SUBS
 from .. import face_states as _face_states  # noqa: E402  transform / face up / face down (#635)
 _SUBS += _face_states.SUBS
 _EFFECT_PATTERNS += _face_states.EFFECT_PATTERNS
+_parse_module._FACE_LINE_PARSERS = (_face_states.face_line,) + _parse_module._FACE_LINE_PARSERS

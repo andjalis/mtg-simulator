@@ -315,7 +315,8 @@ def selector(text, *, plural=False):
                 types.append(low)
             elif low in ('tapped', 'untapped', 'attacking', 'blocking', 'legendary', 'nonlegendary', 'token', 'nontoken',
                          'nonland', 'noncreature', 'nonartifact', 'colorless', 'multicolored', 'monocolored',
-                         'suspected', 'snow', 'nonsnow', 'face-up') or low.startswith('non') and low[3:] in _TYPES:
+                         'suspected', 'snow', 'nonsnow', 'face-up', 'transformed') or \
+                    low.startswith('non') and low[3:] in _TYPES:
                 result.setdefault('traits', []).append(low)
             elif low in _COLORS:
                 result.setdefault('colors', []).append(_COLORS[low])
@@ -439,6 +440,10 @@ def matches(game, permanent, spec, controller, source=None):
             return False        # face down: manifested / morphed / disguised (Permanent.hidden) (#540)
         if trait == 'face-down' and getattr(permanent, 'hidden', None) is None:
             return False        # (#635)
+        if trait == 'transformed':      # its back face is up: transformed from its front (#635)
+            front = getattr(permanent, 'front_face', None)
+            if front is None or front.back is not permanent.card:
+                return False
         if trait == 'morph' and not any(a.kind in ('morph', 'megamorph', 'disguise') for a in permanent.card.alt_costs):
             return False        # "with a morph ability": the face-up card's own (a face-down one has none, #635)
         if trait.startswith('non') and trait[3:] in _TYPES and has_type(trait[3:]):
