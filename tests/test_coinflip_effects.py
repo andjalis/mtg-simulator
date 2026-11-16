@@ -52,7 +52,9 @@ class CoinFlipEffects(unittest.TestCase):
 
     def test_near_misses_refused(self):
         for text in ("Remove ~ from combat and it can't block this turn.",
-                     "Flip a coin at end of combat. If you lose the flip, turn ~ face down."):
+                     # "turn ~ face down" is supported since #635 (Skittish Valesk): another rider stands in
+                     "Flip a coin at end of combat. If you lose the flip, ~ phases out and can't phase in until your "
+                     "next turn."):
             with self.subTest(text=text):
                 effects, bad = _parse_effects(text)
                 self.assertTrue(bad, effects)
