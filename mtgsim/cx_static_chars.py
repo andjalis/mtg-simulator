@@ -367,6 +367,11 @@ def effects(perm) -> list:
     game = getattr(perm.controller, "_game", None)
     if game is None or "impending" not in perm.__dict__ or id(perm) in _BUSY:
         return []           # still being constructed, or asked again while reading a group's membership
+    if not (perm._card.advanced_rules or {}).get("cx_chars"):
+        from .residual_templates import _source_index
+        index = _source_index(game)
+        if "cx_chars@host" not in index and "cx_chars@group" not in index and "gated" not in index:
+            return []       # no rule anywhere could reach perm: _rows would yield nothing (#698)
     from .continuous import ContinuousEffect
     from .permanent_templates import _SUBTYPE_TYPES
     _BUSY.add(id(perm))

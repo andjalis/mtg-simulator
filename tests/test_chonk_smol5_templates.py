@@ -361,7 +361,9 @@ class RealCards(unittest.TestCase):
     def test_partial_cards_keep_their_remaining_gaps_visible(self):
         # multi-card exile costs stay approximate; the hold items stay unsupported
         ruinator = self.card("Skaab Ruinator")
-        self.assertIn("You may cast this card from your graveyard.", ruinator.unsupported)
+        # its graveyard permission is read since #625 (cx_altcost zone_alt); the exile cost stays approximate
+        self.assertNotIn("You may cast this card from your graveyard.", ruinator.unsupported)
+        self.assertTrue(ruinator.advanced_rules.get("zone_alt"))
         self.assertTrue(any("instead of three" in a for a in ruinator.approximations))
         oculus = self.card("Abhorrent Oculus")
         self.assertTrue(any("instead of six" in a for a in oculus.approximations))

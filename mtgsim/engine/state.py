@@ -119,6 +119,20 @@ def protected_from(perm, source) -> bool:
     return protected(perm, card, source)
 
 
+
+_LAZY: dict = {}
+
+
+def _lazy(module: str, name: str):
+    """mtgsim.<module>.<name>, imported on first use and kept: these modules import this one, and a function-level
+    import costs about a microsecond on paths called millions of times per game (#698)."""
+    key = module + "." + name
+    found = _LAZY.get(key)
+    if found is None:
+        import importlib
+        found = _LAZY[key] = getattr(importlib.import_module("mtgsim." + module), name)
+    return found
+
 class Permanent:
     def __setattr__(self, name, value):
         if name in ("attached_to", "aura_host") and "card" in self.__dict__:
@@ -293,8 +307,7 @@ class Permanent:
     def _pt_bonus(self):
         """(power, toughness) from anthems, attached equipment and "for each" counts, in one pass
         over the battlefield; the same sums as anthem, equipment and per_bonus."""
-        from ..residual_templates import anthem_bonus
-        bp, bt = anthem_bonus(self)
+        bp, bt = _lazy("residual_templates", "anthem_bonus")(self)
         creature = self.is_creature
         what = self.card.pt_per
         sp, st = self.card.pt_scale
@@ -444,14 +457,19 @@ class Permanent:
         return continuous.keyword(self, kw, self._has_unlayered(kw))
 
     def _has_unlayered(self, kw):
+        # the permanent's own keywords first: every check up to keyword_at_counters only returns True and has no
+        # side effects, so the cheapest one can go first without changing the answer (#698)
+        if kw in self.card.keywords or kw in self.temp_kw or kw in self.perm_kw or (kw in KEYWORDS and self.counters.get(kw, 0) > 0):
+            return True
         game = getattr(self.controller, '_game', None)
         if game is not None:
-            from ..permanent_templates import matches
-            for player in game.players:
-                for source in player.battlefield:
-                    if not source.abilities_suppressed and any(kw in kws and matches(game, self, spec, source.controller, source)
-                            for spec, kws in source.card.static_keyword_grants):
-                        return True
+            matches = _lazy("permanent_templates", "matches")
+            # only permanents that may grant keywords (the cached index); cheapest test first (#698)
+            for source in _lazy("residual_templates", "field_sources")(game, "static_keyword_grants"):
+                grants = source.card.static_keyword_grants
+                if grants and any(kw in kws for _, kws in grants) and not source.abilities_suppressed and \
+                        any(kw in kws and matches(game, self, spec, source.controller, source) for spec, kws in grants):
+                    return True
         if self.card.level_blocks:
             from ..batch1_templates import level_block
             block = level_block(self)
@@ -461,10 +479,14 @@ class Permanent:
             from ..cx_triggers import hexproof_entered
             if hexproof_entered(self):
                 return True
-        if kw in self.card.keywords or kw in self.temp_kw or kw in self.perm_kw or (kw in KEYWORDS and self.counters.get(kw, 0) > 0):
-            return True
+        if kw in ("toxic", "ward"):        # "with toxic" / "with ward": any value, printed or granted (#633)
+            from ..kw_values import amounts
+            if (self.card.toxic if kw == "toxic" else self.card.ward) or amounts(self, kw):
+                return True
+        fields = _lazy("residual_templates", "field_sources") if game is not None else None
         if kw in ('training', 'dethrone') and self.is_creature and any(k == kw and not (other and source is self)
-                                   for source in self.controller.battlefield
+                                   for source in (fields(game, "granted_attack_keywords") if fields else
+                                                  self.controller.battlefield) if source.controller is self.controller
                                    for k, other in source.card.granted_attack_keywords
                                    if not source.silenced and not any('loses_abilities' in a.card.aura_flags for a in source.auras)):
             return True
@@ -484,28 +506,29 @@ class Permanent:
         for k, cond in self.card.cond_keywords:
             if k == kw and self.condition(cond):
                 return True
-        from ..cx_statics import grants as conditional_grant
-        if conditional_grant(self, kw):
+        if _lazy("cx_statics", "grants")(self, kw):
             return True
+        # permanents with keyword_sub grants: all players' (the index) or, with no game, the controller's
+        subs = fields(game, "keyword_sub") if fields else list(self.controller.battlefield)
         if any((sub in self.card.subtypes or sub == "Face-down" and self.hidden is not None) and k == kw
                and not (other and x is self)
-               for x in self.controller.battlefield for sub, k, other in x.card.keyword_sub):
+               for x in subs if x.controller is self.controller for sub, k, other in x.card.keyword_sub):
             return True
         # A chosen-type grant (Shimmer: "Each land of the chosen type has phasing") — the
         # "@chosen" marker reads the source's chosen_type; these grants are not scoped to
         # the source's controller.
-        game = getattr(self.controller, "_game", None)
-        players = game.players if game is not None else (self.controller,)
         if any(sub == "@chosen" and k == kw and not (other and x is self)
                and getattr(x, "chosen_type", "") and x.chosen_type in self.card.subtypes
-               for pl in players for x in pl.battlefield for sub, k, other in x.card.keyword_sub):
+               for x in subs for sub, k, other in x.card.keyword_sub):
             return True
         if self.is_creature and self.p1 > 0 and any(kw in x.card.counter_team_keywords
-                                                    for x in self.controller.battlefield):
+                                                    for x in (fields(game, "counter_team_keywords") if fields else
+                                                              self.controller.battlefield)
+                                                    if x.controller is self.controller):
             return True
         if kw in TEAM_KEYWORDS and self.is_creature:
-            for x in self.controller.battlefield:
-                if kw in x.card.team_keywords:
+            for x in (fields(game, "team_keywords") if fields else self.controller.battlefield):
+                if x.controller is self.controller and kw in x.card.team_keywords:
                     return True
         if self.card.keyword_at_counters and self.p1 >= self.card.keyword_at_counters[0]:
             return kw == self.card.keyword_at_counters[1]
@@ -591,6 +614,12 @@ class Permanent:
         if self.card.keyword_at_counters:
             n, kw = self.card.keyword_at_counters
             count += int(kw == keyword and self.p1 >= n)
+        game = getattr(self.controller, "_game", None)
+        if game is not None and keyword in ("exalted", "riot"):     # "<group> have exalted / riot" (#633)
+            from ..permanent_templates import matches
+            count += sum(keyword in kws and matches(game, self, spec, source.controller, source)
+                         for pl in game.players for source in pl.battlefield if not source.abilities_suppressed
+                         for spec, kws in source.card.static_keyword_grants)
         return count
 
     @property
@@ -620,8 +649,9 @@ class Permanent:
             return self.animated.ward
         if self.card.ward_untapped_only and self.tapped:
             return 0
+        from ..kw_values import amounts         # granted "ward {N}" (#633)
         return max([self.card.ward] + [e.card.equip_ward for e in self.equipment] +
-                   [a.card.equip_ward for a in self.auras] + self._group_ward())
+                   [a.card.equip_ward for a in self.auras] + amounts(self, "ward") + self._group_ward())
 
     def _group_ward(self) -> list:
         """Ward from "Other creatures you control have ward {1}" statics on the battlefield."""

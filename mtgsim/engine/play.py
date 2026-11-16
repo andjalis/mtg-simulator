@@ -127,6 +127,7 @@ class PlayMixin:
         if not self.valid_action_targets(p, [effects[i] for i in live], [targets[i] for i in live], card):
             return False
         cost = self.cost_of(p, card, assist=False)
+        defiler_life = self._defiler_life[1] if getattr(self, "_defiler_life", (None,))[0] is card else 0
         if card.advanced_rules.get("target_cost"):    # "costs {2} less to cast if it targets a black permanent"
             from ..cx_static_cost import target_cost
             cost, targets = target_cost(self, p, card, effects, targets)
@@ -195,6 +196,8 @@ class PlayMixin:
             self.change_life(p, -alt.life, f"{card.name}: alternative cost")
         if card.extra_life_cost:
             self.change_life(p, -card.extra_life_cost, f"{card.name}: additional cost")
+        if defiler_life:
+            self.change_life(p, -defiler_life, f"{card.name}: additional cost (Defiler)")
         sac_stats = None
         if plan.sacrifice is not None:
             victim = plan.sacrifice
@@ -222,7 +225,7 @@ class PlayMixin:
             from ..cx_mech import pay_beam
             if not pay_beam(self, p, base):
                 return False
-        if kind.startswith("cond_alt_"):
+        if kind.startswith(("cond_alt_", "gy_alt_", "ex_alt_")):
             from ..cx_altcost import pay as pay_alternative
             if not pay_alternative(self, p, base, kind):
                 return False
@@ -320,10 +323,10 @@ class PlayMixin:
         item.evidence = self.collect_evidence(p, card)
         item.emerged_toughness = getattr(self, "_emerge_toughness", None) if kind == "emerge" else None
         item.sac_stats = sac_stats
+        cx_spell_costs.to_item(self, item, add_cost)        # X / "this way" / beheld cards of the paid cost
         if discarded_cost is not None:
             item.discarded_stats = (int(discarded_cost.power or 0), int(discarded_cost.toughness or 0),
                                     discarded_cost.cmc)
-        item.behold_exiled = list(getattr(self, "_add_cost_exiled", ())) if add_cost is not None else []
         if exiled_gy is not None:    # for ("exiled_gy", "power") and friends (Corpse Lunge)
             item.exiled_gy_stats = (int(exiled_gy.power or 0), int(exiled_gy.toughness or 0), exiled_gy.cmc)
         item.bargained = bool(card.bargain) and self.pay_bargain(p, card)
@@ -382,6 +385,8 @@ class PlayMixin:
             getattr(self, "next_discount", {}).pop(p.name, None)
             from ..cx_static_cost import spell_cast as temp_discounts_spent
             temp_discounts_spent(self, p, card)        # "the next Dragon spell you cast costs {2} less"
+            from ..spell_grants import spell_cast as next_grants_spent
+            next_grants_spent(self, p, card)           # "the next spell you cast this turn has convoke" (#633)
             from ..residual_templates import on_spell_cast
             on_spell_cast(self, p, item)
             copies.on_cast(self, p, item)

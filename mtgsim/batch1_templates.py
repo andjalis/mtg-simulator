@@ -60,6 +60,10 @@ def parse_rider(s, effects):
     if re.fullmatch(r"if a creature dealt damage this way would die this turn, exile it instead", s, re.I) and last.kind == "damage":
         effects[-1] = dataclasses.replace(last, data=dict(last.data, exile_dying=True))
         return True
+    if re.fullmatch(r"if a permanent dealt damage (?:this way|by ~) would die this turn, exile it instead", s, re.I) and \
+            last.kind == "damage":      # creatures and planeswalkers alike (#407)
+        effects[-1] = dataclasses.replace(last, data=dict(last.data, exile_dying="permanent"))
+        return True
     return False
 
 
@@ -371,8 +375,17 @@ def on_upkeep(game, active):
             host = src.aura_host
             if host is not None and host.controller is active:
                 for trig in src.triggers:
-                    if trig.event == 'host_upkeep':
+                    if trig.event == 'host_upkeep' and is_host_kind(trig):
+                        # only this module's own kinds: cx_trig_events.host_phase queues the general ones (#714)
                         game.queue_trigger(player, trig.effects, src, src.card.name, context=host)
+
+
+HOST_KINDS = ('host_lose', 'host_damage', 'host_shrink')
+
+
+def is_host_kind(trig) -> bool:
+    """A host_upkeep trigger made of this module's kinds (they read the enchanted permanent as the context)."""
+    return bool(trig.effects) and all(e.kind in HOST_KINDS for e in trig.effects)
 
 
 def cumulative_upkeep(game, p, perm):
@@ -380,7 +393,11 @@ def cumulative_upkeep(game, p, perm):
     age = perm.counters.get('age', 0) + 1
     perm.counters['age'] = age
     kind, cost = perm.card.advanced_rules['cumulative_upkeep']
-    if kind == 'life':
+    if kind not in ('life', 'mana'):        # "{G} or {W}", "Sacrifice a land.", ... (cumulative_costs, #646)
+        from .cumulative_costs import pay
+        if pay(game, p, perm, kind, cost, age):
+            return
+    elif kind == 'life':
         if p.life - cost * age >= 8:
             game.change_life(p, -cost * age, f"{perm.card.name}: cumulative upkeep")
             return

@@ -227,6 +227,9 @@ class TurnsMixin:
             return
         for card in list(p.hand):
             spec = card.cycling
+            if not spec:
+                from ..zone_grants import cycling as granted_cycling     # "<cards> in your hand have cycling" (#633)
+                spec = granted_cycling(self, p, card)
             if not spec or card not in p.hand or self.over:
                 continue
             lands = sum(x.card.is_land for x in p.battlefield)
@@ -242,10 +245,18 @@ class TurnsMixin:
             self.fire(p, "you_cycle")
             for trig in card.cycle_self_triggers:
                 self.queue_trigger(p, trig.effects, None, f"{card.name}: cycled")
-            if spec["land"]:
+            if spec["land"] or spec.get("type"):
                 want = spec["land"]
-                found = next((c for c in p.library if c.is_land and (
-                    want == "any" or (want == "basic" and is_basic_land(c)) or want in c.subtypes)), None)
+                if spec.get("type"):            # "Wizardcycling": any card with that subtype (CR 702.29e)
+                    found = next((c for c in p.library if spec["type"] in c.subtypes), None)
+                elif "|" in want:               # "Islandcycling {2}, swampcycling {2}": the type we have fewer of
+                    have = [x for x in p.battlefield if x.card.is_land]
+                    kinds = sorted(want.split("|"), key=lambda t: sum(t in x.card.subtypes for x in have))
+                    found = next((c for t in kinds for c in p.library if t in c.subtypes), None)
+                else:
+                    found = next((c for c in p.library if c.is_land and (
+                        want == "any" or (want == "basic" and is_basic_land(c)) or
+                        (want == "artifact" and c.is_artifact) or want in c.subtypes)), None)
                 if found is not None:
                     p.library.remove(found)
                     p.hand.append(found)

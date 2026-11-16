@@ -4,7 +4,7 @@ from __future__ import annotations
 import dataclasses
 from contextlib import nullcontext
 
-from .. import counting
+from .. import counting, this_way
 from ..cards import Effect
 from .state import Permanent, Player, StackItem
 from .kinds import HANDLERS, NO_SBA
@@ -32,6 +32,8 @@ class ResolveMixin:
         opp = self.opponent(p)
         if eff.target == "self" and item is not None:
             target = item.source
+            if target is None and getattr(item, "created_token", None) is not None:
+                target = item.created_token     # a spell's "Put X +1/+1 counters on it" after "Create a token" (#682)
         if eff.target == "that_player" and item is not None:
             ctx = item.context
             target = ctx.controller if isinstance(ctx, StackItem) else ctx   # any_cast: the cast spell's caster
@@ -51,6 +53,7 @@ class ResolveMixin:
             elif target is None and isinstance(ctx, Player) and eff.data.get("cast_spell") is not None:
                 target = ctx
         k = eff.kind
+        this_way.start(self, item, eff)     # "... this way": the previous effect's results (#642)
         tw = getattr(item, "this_way", None) if item is not None else None
         if eff.data.get("that_much") and not eff.amount and tw is not None and tw[0] == "sacrificed" \
                 and getattr(self, "event_amount", None) is None:

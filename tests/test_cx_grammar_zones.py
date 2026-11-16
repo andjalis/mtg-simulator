@@ -38,7 +38,7 @@ class Parsing(unittest.TestCase):
         self.assertEqual([(e.kind, e.amount) for e in effs[0].data["effects"]], [("cx_edict", 2)])
         self.assertEqual(self.kinds("Each opponent sacrifices a creature or planeswalker."), ["cx_players"])
         for s in ("Each player sacrifices a creature you control.",
-                  "Each opponent sacrifices a creature with the greatest power among creatures they control.",
+                  # "with the greatest power among ..." is read by cx_grammar_edicts now (#631)
                   "Each player sacrifices two land."):
             self.assertIsNone(parse_sentence(s), s)
 

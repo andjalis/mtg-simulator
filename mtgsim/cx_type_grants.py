@@ -40,6 +40,10 @@ def _subtypes(words: str, plural: bool):
 
 def parse_line(line: str, st) -> bool:
     import copy
+    from .zone_grants import parse_line as zone_grant_line     # "<cards> in your graveyard have retrace" (#633)
+    from .kw_trigger_grants import parse_line as trigger_keyword_line     # "<group> have melee" (#633)
+    if zone_grant_line(line, st) or trigger_keyword_line(line, st):
+        return True
     m = _CLAUSE.search(line)
     if not m or line.count(" in addition to ") != 1:
         return False
@@ -95,9 +99,11 @@ def effects(perm) -> list:
     game = getattr(perm.controller, "_game", None)
     if game is None or "impending" not in perm.__dict__ or not perm._card.is_creature:
         return []           # still being constructed (impending is set last): the enter hook refreshes it
+    from .residual_templates import has_source_key, sources
+    if not has_source_key(game, "type_grants"):
+        return []           # nothing grants types (#698)
     from .continuous import ContinuousEffect
     from .permanent_templates import matches
-    from .residual_templates import sources
     out = []
     for source in sources(game, "type_grants"):
         for i, (spec, subs) in enumerate(source.card.advanced_rules["type_grants"]):

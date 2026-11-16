@@ -500,7 +500,9 @@ def _xq(text: str):
         return ("tapped_any", tuple(_singular(k) for k in kinds))
     if tl == "the number of times ~ has mutated":
         return ("mutated",)
-    m = re.fullmatch(r"the number of ([\w+/ -]+?) counters? on (?:~|it)", t, re.I)
+    # one counter kind, at most two words ("acquired taste"), never a creature phrase ending "with a +1/+1" (#630)
+    m = re.fullmatch(r"the number of ((?:(?!with |you |and |or |a |an |each |other )[a-z]+ )?[\w+/-]+) counters? on "
+                     r"(?:~|it)", t, re.I)
     if m:
         return ("counters", m[1])
     m = re.fullmatch(r"the number of ([\w -]+?) cards? in your graveyard", t, re.I)

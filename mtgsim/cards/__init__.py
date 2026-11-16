@@ -268,14 +268,28 @@ from .. import linked_exile as _linked_exile  # noqa: E402
 _EFFECT_PATTERNS += _linked_exile.EFFECT_PATTERNS
 from .. import cx_spent as _cx_spent  # noqa: E402
 _SUBS += _cx_spent.SUBS
+from .. import damage_reorder as _damage_reorder  # noqa: E402
+_SUBS += _damage_reorder.SUBS
+_EFFECT_PATTERNS += _damage_reorder.EFFECT_PATTERNS
+from .. import chance_each as _chance_each  # noqa: E402
+_SUBS += _chance_each.SUBS
+_EFFECT_PATTERNS += _chance_each.EFFECT_PATTERNS
 from .. import protection_types as _protection_types  # noqa: E402
 KEYWORDS.update(_protection_types.KEYWORDS)
 from .. import bounce_own as _bounce_own  # noqa: E402
 _EFFECT_PATTERNS += _bounce_own.EFFECT_PATTERNS
+from .. import zone_exile as _zone_exile  # noqa: E402
+_EFFECT_PATTERNS += _zone_exile.EFFECT_PATTERNS
+from .. import give_control as _give_control  # noqa: E402
+_EFFECT_PATTERNS += _give_control.EFFECT_PATTERNS
 from .. import free_cast as _free_cast  # noqa: E402  "cast a spell from your hand without paying its mana cost" (#625)
 _EFFECT_PATTERNS += _free_cast.EFFECT_PATTERNS
 from .. import cx_dmg_equal as _cx_dmg_equal  # noqa: E402  damage equal to a quantity (#626)
 _EFFECT_PATTERNS += _cx_dmg_equal.EFFECT_PATTERNS
+from .. import cx_owner_library as _cx_owner_library  # noqa: E402  "put it on top of its owner's library" (#628)
+_EFFECT_PATTERNS += _cx_owner_library.EFFECT_PATTERNS
+from .. import spell_grants as _spell_grants  # noqa: E402  "the next spell you cast this turn has cascade" (#633)
+_EFFECT_PATTERNS += _spell_grants.EFFECT_PATTERNS
 from .. import cx_hand_hits as _cx_hand_hits  # noqa: E402  revealed hands (#631)
 _SUBS += _cx_hand_hits.SUBS
 _EFFECT_PATTERNS[:0] = _cx_hand_hits.EFFECT_PATTERNS

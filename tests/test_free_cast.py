@@ -173,6 +173,7 @@ class RealCards(unittest.TestCase):
     def test_near_misses_stay_partial(self):
         from mtgsim.carddb import CardDB
         db = CardDB(offline=True)
+        # (Omniscience is read since #667: group_altcost's "cast spells from your hand without paying their mana costs")
         for name in ("Reinterpret", "Counterlash", "Zaffai and the Tempests", "Twinning Glass",
                      "One with the Multiverse"):
             self.assertEqual(card_coverage(db.get(name)).status, "partial", name)

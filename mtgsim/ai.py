@@ -23,6 +23,9 @@ HOLD_BURN = 2.5         # value of keeping an any-target burn spell for a creatu
 CRACK_WEIGHT = 0.5      # weight on (non-lethal) damage we expect to take back next turn
 MAX_SETUP_SPELLS = 6    # spells considered when looking for a precombat kill (pump, burn, keywords)
 MAX_ENUMERATE = 6       # try every attack set up to this many ready creatures
+# "Put target permanent into its owner's library" (Synchronized Eviction, #716): removal for the AI, like destroy
+# (it also gets around indestructible)
+TUCK_KINDS = ("tuck_perm", "tuck_top", "cx_tuck")
 REMOVAL_BAR = 4.5       # least a creature must be worth to spend instant removal on it
 PW_KEEP = 2.0           # value of a planeswalker still being on the battlefield next turn
 SWEEP_BAR = 6.0         # least net value for a sweeper when we are not under pressure
@@ -455,6 +458,22 @@ def _sized_inner(game: Game, me: Player, eff: Effect, who: Player | None = None)
     return inner
 
 
+def _group_remove_value(game: Game, me: Player, eff: Effect) -> float:
+    """Net value of a group_remove that destroys, exiles or bounces every permanent its selector names: the
+    opponent's minus ours (indestructible ones survive a destroy; a bounce is worth half)."""
+    from .permanent_templates import matches
+    op, total = eff.data.get("op"), 0.0
+    for pl in game.players:
+        for x in pl.battlefield:
+            if not matches(game, x, eff.data["selector"], me, None):
+                continue
+            if op == "destroy" and x.has("indestructible"):
+                continue
+            v = card_value(x.card) * (0.5 if op == "bounce" else 1.0)
+            total += -v if pl is me else v
+    return total
+
+
 class HeuristicAI:
     """Evaluation-driven player: simulates combat, holds instants for the opponent's turn."""
 
@@ -791,6 +810,10 @@ class HeuristicAI:
     @staticmethod
     def _sized(game: Game, me: Player, card: CardDef):
         """An X spell with X fixed at the largest value the remaining mana pays for, else None."""
+        from .cx_spell_costs import cost_x, sized
+        paid = cost_x(game, me, card)              # "discard X cards" / "pay X life": X chosen by the cost
+        if paid is not None:
+            return sized(card, paid) if paid >= 1 else None
         x = 0
         cost = game.cost_of(me, card)
         per_x = card.mana_cost.get("X", 1) or 1          # {X}{X}: two mana per X (#531)
@@ -817,8 +840,9 @@ class HeuristicAI:
             # Unearth: a hasty attacker for one turn; worth casting before combat when it can attack
             base = card.spell_effects[0].data["card"]
             return (card_value(base) / 2 + 1, None) if base.is_creature and opp.life > 0 else None
-        if not card.is_permanent and any((e.data or {}).get("x") or e.kind == "gy_move" and e.data.get("x_n")
-                                         for e in card.spell_effects):
+        from .cx_spell_costs import has_x_cost
+        if not card.is_permanent and (any((e.data or {}).get("x") or e.kind == "gy_move" and e.data.get("x_n")
+                                          for e in card.spell_effects) or has_x_cost(card)):
             sized = self._sized(game, me, card)
             return None if sized is None else self.plan_spell(game, me, sized, precombat)
         if card.is_permanent:
@@ -842,7 +866,7 @@ class HeuristicAI:
                     + self._static_value(game, me, card) - self._sac_cost(game, me, card), None)
         instant = card.instant_speed
         if any('anchor' in e.data or e.kind in ('allocated_counter', 'return_tribal_grave', 'grave_library_top',
-                'control_permanent', 'cx_exchange', 'cx_attach', 'populate', 'advanced_quantity_stats', 'selected_mass_move', 'filtered_grave_return', 'graveyard_exile_all', 'graveyard_exile_choice') for e in card.spell_effects):
+                'control_permanent', 'cx_exchange', 'cx_attach', 'populate', 'advanced_quantity_stats', 'selected_mass_move', 'filtered_grave_return', 'graveyard_exile_all', 'graveyard_exile_choice', 'give_control_choice', 'give_control_all') for e in card.spell_effects):
             from .engine.policy import _mode_value
             with game.targeting(card):
                 value = _mode_value(game, me, card.spell_effects)
@@ -910,7 +934,7 @@ class HeuristicAI:
                     return None  # removal waits for their attack or end step
                 targets.append(tgt)
                 value += v
-            elif eff.kind in ("destroy", "exile_permanent", "bounce", "debuff_one", "oring"):
+            elif eff.kind in ("destroy", "exile_permanent", "bounce", "debuff_one", "oring") + TUCK_KINDS:
                 tgt = self.choose_target(game, me, eff, card)
                 if tgt is None:
                     return None
@@ -926,7 +950,8 @@ class HeuristicAI:
                     return None
                 targets.append(got[0])
                 value += got[1]
-            elif eff.kind in ("wrath", "debuff") or (eff.kind == "damage" and eff.target == "each_creature"):
+            elif eff.kind in ("wrath", "debuff") or (eff.kind == "damage" and eff.target == "each_creature") or \
+                    (eff.kind == "group_remove" and eff.data.get("op") in ("destroy", "exile", "bounce")):
                 v = self.sweep_value(game, me, eff)
                 # Under pressure any good sweep will do; otherwise wait until it takes out several cards.
                 pressure = 2 * sum(combat_power(c) for c in opp.creatures) >= me.life
@@ -993,6 +1018,13 @@ class HeuristicAI:
                     return None
                 targets.append(tgt)
                 value += 1.0
+            elif eff.kind == "gy_move" and eff.data.get("zone") == "mine" and not eff.data.get("x_n"):
+                # "return N target <desc> cards from your graveyard to your hand / the battlefield": the best N
+                from .engine.state import _gy_desc
+                pool = sorted((c for c in me.graveyard if copies.fits(c, _gy_desc(eff.data.get("what", "")))),
+                              key=lambda c: -c.cmc)[:max(1, eff.amount)]
+                targets.append(None)
+                value += sum((card_value(c) if eff.data.get("dest") == "bf" else 1.0) + 0.5 * c.cmc for c in pool)
             elif eff.kind == "divided_damage":     # the division itself is planned as it goes on the stack
                 from .cx_damage import ai_worth
                 v = ai_worth(self, game, me, eff, card, instant)
@@ -1277,6 +1309,9 @@ class HeuristicAI:
             if eff.kind == "oring" or eff.kind == "blink_link_exile" and eff.target != "none":
                 tgt = self.choose_target(game, me, eff, card)
                 value += perm_value(tgt) if tgt is not None else 0.0
+            elif eff.kind == "champion":    # sacrificed with nothing to champion; else gives up the championed one
+                from .champion import ai_value
+                value += ai_value(game, me, eff, card)
             elif eff.kind == "oring_all":   # symmetric: it exiles our own small permanents too
                 hit = lambda x: (x.is_creature or x.card.is_artifact) and x.card.cmc <= eff.amount
                 value += sum(perm_value(x) for x in game.opponent(me).battlefield if hit(x)) - \
@@ -1300,6 +1335,8 @@ class HeuristicAI:
 
     def sweep_value(self, game: Game, me: Player, eff: Effect) -> float:
         opp = game.opponent(me)
+        if eff.kind == "group_remove":      # "Destroy all creatures target opponent controls" (#716): what it removes
+            return _group_remove_value(game, me, eff)
 
         def hit(c):
             if eff.kind == "wrath":
@@ -1362,7 +1399,7 @@ class HeuristicAI:
                     return tgt
                 return opp
             return None
-        if eff.kind in ("destroy", "exile_permanent", "bounce", "debuff_one", "oring", "tap", "stun"):
+        if eff.kind in ("destroy", "exile_permanent", "bounce", "debuff_one", "oring", "tap", "stun") + TUCK_KINDS:
             pool = opp.creatures + [x for x in getattr(opp, "planeswalkers", []) if not x.is_creature]
             if eff.target == "nonland_perm":
                 pool = [x for x in opp.battlefield if not x.card.is_land or x.is_creature]
@@ -1531,11 +1568,31 @@ class HeuristicAI:
                 return card, [None] * len(card.spell_effects)
         return None
 
-    def _removal_on(self, game: Game, me: Player, card: CardDef, pool):
-        """(value, targets) for using removal card on the best creature in pool."""
+    def _removal_on(self, game: Game, me: Player, card: CardDef, pool, tempo: bool = False):
+        """(value, targets) for using removal card on the best creature in pool. tempo: also "tap target creature"
+        (more with a stun counter after it) and draws, as at the opponent's end step, where tapping keeps a creature
+        out of their next turn (#716); not for creatures already attacking."""
         targets, value = [], 0.0
-        for eff in card.spell_effects:
-            if eff.kind in ("destroy", "exile_permanent", "bounce") or (eff.kind == "damage" and eff.target in CREATURE_TARGETS):
+        effects = list(card.spell_effects)
+        for i, eff in enumerate(effects):
+            if tempo and eff.kind == "tap" and eff.target in CREATURE_TARGETS:
+                legal = [c for c in pool if not c.tapped and _legal(game, me, eff, c, card)
+                         and all(c is not t for t in targets)]
+                tgt = max(legal, key=perm_value, default=None)
+                if tgt is None:
+                    if eff.data.get("optional_target"):
+                        targets.append(None)
+                        continue
+                    return None
+                stunned = i + 1 < len(effects) and effects[i + 1].kind == "stun" and effects[i + 1].target == "prev"
+                targets.append(tgt)
+                value += perm_value(tgt) * (0.6 if stunned else 0.25)
+                continue
+            if tempo and eff.kind == "draw" and eff.target == "none":
+                targets.append(None)
+                value += 1.5 * eff.amount
+                continue
+            if eff.kind in ("destroy", "exile_permanent", "bounce") + TUCK_KINDS or (eff.kind == "damage" and eff.target in CREATURE_TARGETS):
                 legal = [c for c in pool if _legal(game, me, eff, c, card)
                          and not (eff.kind != "bounce" and c.has("indestructible"))
                          and (eff.kind != "damage" or c.toughness - c.damage <= eff.amount)]
@@ -1614,7 +1671,12 @@ class HeuristicAI:
         """Opponent's end step: our mana untaps next, so use it on removal, burn, flash, draw."""
         opp = game.opponent(me)
         best = None
-        for card in options:
+        for option in options:
+            card = option
+            if not option.is_permanent and any((e.data or {}).get("x") for e in option.spell_effects):
+                card = self._sized(game, me, option)    # "X damage": judged at the X our mana pays for (#716)
+                if card is None:
+                    continue
             if card.is_creature:
                 value, targets = card_value(card), None
             elif card.is_permanent and not card.spell_effects and not card.is_land:
@@ -1637,12 +1699,12 @@ class HeuristicAI:
                     continue
                 targets = [tgt if e is eff else None for e in card.spell_effects]
             else:
-                plan = self._removal_on(game, me, card, opp.creatures)
+                plan = self._removal_on(game, me, card, opp.creatures, tempo=True)
                 if plan is None or plan[0] < REMOVAL_BAR:
                     continue
                 value, targets = plan
             if value > 0 and (best is None or value > best[0]):
-                best = (value, card, targets)
+                best = (value, option, targets)     # the card itself: casting it pays the largest X again
         return (best[1], best[2]) if best else None
 
     # -------------------------------------------------------- planeswalkers

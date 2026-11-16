@@ -625,8 +625,11 @@ class CostsMixin:
         if card.extra_sac_or_pay and not self.extra_sac_candidates(p, card):
             more += card.extra_sac_or_pay
         # 601.2f: the total cost is the mana cost plus every increase, then every reduction
-        from ..cx_spell_costs import add_mana as add_cost_mana      # "... or pay {3}{B}" additional costs (#342)
-        cost = cx_static_cost.adjust(self, p, card, add_cost_mana(self, p, card, cost), increase=more, reduction=n)
+        from ..cx_spell_costs import add_mana as add_cost_mana, reduction as add_cost_reduction    # #342
+        cost = cx_static_cost.adjust(self, p, card, add_cost_mana(self, p, card, cost), increase=more,
+                                    reduction=n + add_cost_reduction(self, p, card))
+        from ..cx_spell_costs import defiler_discount
+        cost = defiler_discount(self, p, card, cost)     # "you may pay 2 life ... cost {B} less" (Defilers, #342)
         if pay_as.convoke:
             self._convoke_k = min(len(self.convoke_pool(p)), cost.get("generic", 0))
             cost["generic"] -= self._convoke_k
@@ -812,9 +815,10 @@ class CostsMixin:
             for c in p.graveyard:      # Lier: every instant and sorcery has flashback for its own mana cost
                 if (c.is_instant or c.is_sorcery) and c not in p.granted_fb:
                     out.append(self._variant(c, "flashback", AltCost("flashback", dict(c.mana_cost))))
+        from ..zone_grants import alts as granted_alts        # "<cards> in your graveyard have flashback" (#633)
         for c in p.graveyard:
             out += alt_casts.graveyard_variants(self, p, c)
-            for a in c.alt_costs:
+            for a in list(c.alt_costs) + granted_alts(self, p, c):
                 if a.kind in ("flashback", "gy_ability", "unearth") or (a.kind == "disturb" and c.back is not None) or \
                         (a.kind == "blitz" and "graveyard" in a.zone) or \
                         (a.kind == "mayhem" and c in p.discarded_cards):
@@ -822,7 +826,9 @@ class CostsMixin:
         from ..advanced_templates import permission_options
         from .. import cx_top      # "You may cast creature spells from the top of your library."
         from .. import exile_permissions
-        return out + permission_options(self, p) + cx_top.options(self, p) + exile_permissions.options(self, p)
+        from ..cx_altcost import zone_options     # "You may cast this card from your graveyard / from exile" (#625)
+        return out + permission_options(self, p) + cx_top.options(self, p) + exile_permissions.options(self, p) + \
+            zone_options(self, p)
 
     def impulse_cards(self, p: Player) -> list:
         """Exiled cards p may still play (drops the expired ones)."""
@@ -839,6 +845,8 @@ class CostsMixin:
             return getattr(self, "foreign_zones", {}).get((id(p), kind), p.exile)
         if kind.startswith("exile_cast_"):
             return p.exile
+        if kind.startswith(("gy_alt_", "ex_alt_")):      # "You may cast this card from your graveyard / exile"
+            return p.graveyard if kind.startswith("gy") else p.exile
         return {"grave_permission": p.graveyard, "aftermath": p.graveyard, "from_adventure": p.on_adventure, "foretold": p.foretold, "flashback": p.graveyard,
                 "blitz_gy": p.graveyard, "gy_ability": p.graveyard, "plotted": p.plotted, "from_warp": p.warp_exile, "airbent": p.airbent,
                 "mayhem": p.graveyard, "madness": p.exile, "unearth": p.graveyard, "disturb": p.graveyard, "jump_start": p.graveyard,

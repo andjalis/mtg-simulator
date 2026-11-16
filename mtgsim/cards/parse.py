@@ -6,6 +6,7 @@ import re
 
 from .. import cx_activation, milling, modal, returns, permanent_templates
 from .. import auras as _auras, copies as _copies, cx_tokens as _cx_tokens, storage as _storage
+from .. import kw_lines as _kw_lines
 from .model import (
     Activated, AltCost, BASIC_MANA, CardDef, Effect, NO_MATCH, Trigger, _num, add_mana, parse_mana_cost,
 )
@@ -579,6 +580,7 @@ def _parse_face(data: dict) -> CardDef:
     text = re.sub(r"(?m)^((?:Exhaust — )?)Waterbend (\{\d+\}(?:, \{T\})?:)", r"\1\2", text)    # waterbend {N} pays like {N} here
     text = re.sub(r"(?m)^Ward—Waterbend (\{\d+\})", r"Ward \1", text)
     text = re.sub(r"(?m)^([A-Za-z ,]*[Ff]irebending \d+[A-Za-z ,]*)$", lambda m: "\n".join(x[0].upper() + x[1:] for x in m[1].split(", ")), text)
+    text = _kw_lines.split_lines(text)      # "Flying; fear" keyword lists, "Gae Bolg — Equip {4}" flavor words (#646)
     keywords, produces, etb, spell, unsupported, approximations = set(), set(), [], [], [], []
     level_marks: list = []      # Class: (level, number of triggers parsed before that level's lines)
     triggers: list[Trigger] = []
@@ -608,7 +610,8 @@ def _parse_face(data: dict) -> CardDef:
                     enters_tapped=enters_tapped, etb=etb, extra=extra, gate=gate, keywords=keywords, kicked=kicked,
                     level_marks=level_marks, loyalty_abilities=loyalty_abilities, mode_sink=mode_sink, modes=modes,
                     produces=produces, spell=spell, station_min=station_min, triggers=triggers,
-                    type_line=type_line, types=types, unsupported=unsupported, name=name, oracle=oracle)
+                    type_line=type_line, types=types, unsupported=unsupported, name=name, oracle=oracle,
+                    mana_cost=cost)
     for line in (l.strip() for l in text.split("\n")):
         for handle in _FACE_LINE_PARSERS:
             line = handle(st, line)
@@ -699,7 +702,7 @@ def _parse_face(data: dict) -> CardDef:
     finish_level_up(extra, triggers, activated, approximations, produces)
     extra.pop("is_spree", None)
     extra.pop("_subtypes", None)
-    _auras.finish(extra)
+    _auras.finish(extra, triggers)
     _storage.finish(extra, unsupported)
     if "Battle" in types and "Siege" not in type_line.split("—")[-1].split():
         unsupported.append("Battle rules other than a Siege's (protector and defeat)")    # #254: Sieges only
@@ -728,6 +731,10 @@ def _parse_face(data: dict) -> CardDef:
 
     from ..cx_multi_target import unpaid_x
     unsupported += unpaid_x(cost, spell, modes, triggers, activated, loyalty_abilities, etb, alt_costs, extra)  # #312
+    from ..cx_chosen_type import unbound, hostile
+    unsupported += unbound(oracle, extra, spell, modes, triggers, activated, loyalty_abilities, etb, extra)  # #627
+    if extra.get("choose_type") == "creature" and hostile(oracle):
+        extra.setdefault("advanced_rules", {})["choose_opp_type"] = True
     if data.get("mana_cost") == "" and "Land" not in types:     # no mana cost at all (not {0}): CR 118.6
         extra.setdefault("advanced_rules", {})["no_mana_cost"] = True
     return CardDef(
@@ -848,6 +855,11 @@ def _parse_ability_cost(text: str):
     return mana, extra
 
 
+def _self_it_act(cost_text, body):
+    from ..self_trigger_it import activated_it
+    return activated_it(cost_text, body)
+
+
 def _parse_ability(line: str, approximations: list):
     """A general activated ability ("{2}, {T}: Draw a card."), or None.
 
@@ -896,6 +908,8 @@ def _parse_ability(line: str, approximations: list):
                          max_per_turn=limit, modes=modal.Modes(spec=head[0]), any_player=any_player,
                          restrictions=restrictions, once_game=once_game)
     effects, bad = _parse_effects(body)
+    if bad and _self_it_act(m[1], body):         # "...: It deals 7 damage ..." names the source (#320)
+        effects, bad = _parse_effects(_self_it_act(m[1], body))
     if bad or not effects:
         return None
     if cost[1].get("remove_counter_count") == "x" and not (

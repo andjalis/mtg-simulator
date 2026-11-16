@@ -292,6 +292,11 @@ def parse_line(line: str, st) -> bool:
 
 def _rows(perm, what: str):
     """(source, code, payload) for every gated row of kind ``what`` that reaches perm, before its condition."""
+    game = getattr(perm.controller, "_game", None)
+    if game is not None and not perm.card.advanced_rules.get("gated"):
+        from .residual_templates import has_source_key
+        if not has_source_key(game, "gated"):
+            return          # no gated row anywhere: the scans below would find nothing (#698)
     from .permanent_templates import matches
     if not perm.abilities_suppressed:
         for code, scope, _spec, payload in perm.card.advanced_rules.get("gated", ()):
