@@ -392,7 +392,8 @@ class AbilitiesMixin:
             cap = have if cap is None else min(cap, have)
         if best is not None and cap is not None:
             best = min(best, cap) or None
-        return best
+        from ..cx_noun import ability_x       # "with mana value X": the X of the best target (#403)
+        return ability_x(self, p, perm, act, best)
 
     def valid_action_targets(self, p, effects, targets, source=None):
         with self.targeting(source if source is not None else self.target_source):
@@ -432,6 +433,8 @@ class AbilitiesMixin:
         if x is not None and act.cost.get("X"):        # X paid as mana: effects see it at full size
             preview = [dataclasses.replace(e, amount=x, amount2=x if e.data.get("x2") else e.amount2)
                        if e.data.get("x") else e for e in preview]
+            from ..cx_noun import fix_x
+            preview = fix_x(preview, x)                 # "with mana value X" (#403)
         auto = targets is None
         targets = self.auto_targets(p, preview, perm) if auto else list(targets)
         if auto and x is not None and act.cost.get("X"):           # "{X}, {T}: Tap X target lands": X = the targets
@@ -439,7 +442,8 @@ class AbilitiesMixin:
             n = x_count(preview, targets)
             if n is not None and n != x:
                 return n > 0 and self.activate_ability(p, perm, idx, targets, x=n, counter_choices=counter_choices)
-        if not self.valid_action_targets(p, act.effects, targets, perm):
+        from ..cx_noun import fix_x
+        if not self.valid_action_targets(p, fix_x(act.effects, x) if x is not None else act.effects, targets, perm):
             return False
         from ..cx_abil_mana import AbilityPayment
         if plan is None or self.pay(p, plan.cost, spell=AbilityPayment(perm), exclude_many=plan.exclude,

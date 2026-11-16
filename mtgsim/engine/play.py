@@ -141,10 +141,18 @@ class PlayMixin:
             cost, targets, x_fixed = x_targets_cost(self, p, card, effects, targets, cost)
             if not x_fixed:
                 return False                           # X = 0: no target, nothing to do
+        if x_fixed is None and "X" in card.mana_cost:     # "with mana value X": X is the target's value (#403)
+            from ..cx_noun import x_from_targets
+            x_fixed = x_from_targets(self, effects, targets)
+            if x_fixed is False:
+                return False
+            if x_fixed is not None:
+                cost = {k: v for k, v in cost.items() if k != "X"}
+                cost["generic"] = cost.get("generic", 0) + max(0, x_fixed * (card.mana_cost["X"] or 1) - x_off)
         convoked = self.convoke_pool(p)[:self._convoke_k] if card.convoke else []
         assisted = card.improvise or card.delve
         x = 0
-        if assisted and "X" in card.mana_cost:
+        if assisted and "X" in card.mana_cost and x_fixed is None:     # X fixed by a target (#403): no loop
             for n in range(1, 21):
                 trial = dict(cost, generic=cost.get("generic", 0) + max(0, n * card.mana_cost["X"] - x_off))
                 remaining, tapped, _ = self.assist_payment(p, card, trial)
