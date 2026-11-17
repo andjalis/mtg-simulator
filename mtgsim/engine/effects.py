@@ -209,6 +209,11 @@ class EffectsMixin:
         self.log(f"{target} is countered", p)
 
     def scry(self, p: Player, n: int, to_graveyard: bool = False):
+        if n > 0:       # scry 0 and surveil 0 aren't scry or surveil events (701.22b, 701.25c)
+            if to_graveyard:
+                p.surveilled_turn = True
+            else:
+                p.scried_turn = True
         cards = list(reversed(p.library[-min(n, len(p.library)):])) if n else []
         bottom = self.hook(p, "scry")(self, p, list(cards))
         prefix = [c for c in p.library if c not in cards]

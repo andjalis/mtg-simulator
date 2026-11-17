@@ -307,6 +307,8 @@ _ALIASES = {
     "you've gained life this turn": "gained_life",
     "an opponent lost life this turn": "opp_lost_life",
     "an opponent has been dealt damage this turn": 'lib:["opp_damaged"]',
+    "you've scried or surveilled this turn": 'lib:["scried_surveilled"]',
+    "you've surveilled this turn": 'lib:["surveilled"]',
     "evidence was collected": "evidence",
     "~ was bargained": "bargained",
     "it was bargained": "bargained",
@@ -1322,6 +1324,10 @@ def check(game, p, code: str, item=None, source=None, prev=None):
         return any(len(pl.library) <= args[0] for pl in game.players)
     if kind == "excess":
         return getattr(game, "excess_dealt", 0) > 0
+    if kind == "scried_surveilled":
+        return p.scried_turn or p.surveilled_turn
+    if kind == "surveilled":
+        return p.surveilled_turn
     if kind == "monarch":
         return getattr(game, "monarch", None) is p
     if kind == "opp_monarch":

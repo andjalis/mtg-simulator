@@ -6,6 +6,7 @@ from unittest.mock import patch
 from mtgsim.ai import HeuristicAI
 from mtgsim.cards import Effect
 from mtgsim.engine import Game, Player
+from tests.test_cx_grammar import DB_FILE
 from tests.test_templates import BEAR, ISLAND, card
 
 
@@ -128,6 +129,27 @@ class GraveyardActivated(unittest.TestCase):
         self.a.graveyard += [BEAR] * 7
         self.assertTrue(self.game.activate_graveyard(self.a, c))
 
+    SCRY_GATED = ("{2}: Return this card from your graveyard to the battlefield with a finality counter on it. "
+                  "Activate only if you've scried or surveilled this turn.")
+
+    def test_scry_or_surveil_gate_needs_one_this_turn(self):
+        for kind in ("scry", "surveil"):
+            with self.subTest(kind=kind):
+                self.setUp()
+                c = self.prepare(self.SCRY_GATED)
+                self.assertFalse(self.game.can_activate_graveyard(self.a, c))
+                self.game.resolve(self.b, Effect(kind, 1), None)       # the opponent's doesn't count
+                self.assertFalse(self.game.can_activate_graveyard(self.a, c))
+                self.game.resolve(self.a, Effect(kind, 1), None)
+                self.assertTrue(self.game.activate_graveyard(self.a, c))
+                self.assertEqual(self.a.creatures[0].counters.get("finality"), 1)
+
+    def test_scry_or_surveil_gate_works_at_instant_speed(self):
+        c = self.prepare(self.SCRY_GATED)
+        self.game.resolve(self.a, Effect("surveil", 1), None)
+        self.game.active_idx, self.game.step = 1, "end_step"
+        self.assertTrue(self.game.can_activate_graveyard(self.a, c))
+
     def test_return_fires_entry_trigger(self):
         c = self.prepare("When ~ enters, you gain 2 life.\n{1}: Return this card from your graveyard to the battlefield.")
         self.assertTrue(self.game.activate_graveyard(self.a, c))
@@ -135,13 +157,22 @@ class GraveyardActivated(unittest.TestCase):
 
     def test_unsupported_cost_or_restriction_stays_visible(self):
         for text in ("{T}: Return this card from your graveyard to the battlefield.",
-                     "{1}: Return this card from your graveyard to the battlefield. Activate only if you've scried or surveilled this turn."):
+                     "{1}: Return this card from your graveyard to the battlefield. Activate only if an opponent has been dealt noncombat damage this turn."):
             with self.subTest(text=text):
                 c = revenant(text)
                 self.assertTrue(c.unsupported)
                 self.assertEqual(c.gy_activated, [])
                 self.assertEqual(c.activated, [])
 
+
+@unittest.skipUnless(DB_FILE.exists(), "card database not built")
+class RealCards(unittest.TestCase):
+    def test_proctor_of_potential_parses_fully(self):
+        from mtgsim.carddb import CardDB
+        from mtgsim.coverage import FULL, card_coverage
+        proctor = CardDB().get("Proctor of Potential")
+        self.assertEqual(card_coverage(proctor).status, FULL)
+        self.assertEqual([a.restrictions for a in proctor.gy_activated], [('lib:["scried_surveilled"]',)])
 
 if __name__ == "__main__":
     unittest.main()

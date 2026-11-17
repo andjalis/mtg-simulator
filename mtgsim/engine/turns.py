@@ -342,6 +342,7 @@ class TurnsMixin:
             pl.life_gained_turn = 0
             pl.attacked_with = 0
             pl.creature_died_turn = False
+            pl.scried_turn = pl.surveilled_turn = False
             if isinstance(pl.graveyard, Graveyard):
                 pl.graveyard.descents = 0
             pl.graveyard.left_turn = 0

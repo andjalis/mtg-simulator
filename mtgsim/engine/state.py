@@ -798,6 +798,7 @@ class Player:
         self.attacked_with = 0
         self.next_creature_counters = 0
         self.life_gained_turn = 0
+        self.scried_turn = self.surveilled_turn = False   # "if you've scried or surveilled this turn"
 
     @property
     def life(self): return self._life
